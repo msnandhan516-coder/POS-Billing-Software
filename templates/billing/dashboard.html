@@ -1,15 +1,4 @@
-<h1>Admin Dashboard</h1>
-
-<p>Total Products: {{ total_products }}</p>
-
-<p>Low Stock: {{ low_stock_products }}</p>
-
-<p>Total Staff: {{ total_staff }}</p>
-
-<p>Today's Transactions: {{ today_transactions }}</p>
-
-<p>Today's Sales: ₹{{ today_sales }}</p>
-
-<a href="{% url 'logout' %}">
-    Logout
-</a>
+{% extends 'base.html' %}
+{% block content %}
+    {% include 'admin/dashboard.html' %}
+{% endblock %}

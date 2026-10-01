@@ -1,162 +1,136 @@
-<!DOCTYPE html>
+{% extends 'base.html' %}
 
-<html lang="en">
+{% block title %}Suppliers{% endblock %}
+{% block page_title %}Suppliers{% endblock %}
 
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Suppliers | POS Billing</title>
-
-</head>
-
-<body>
-
-<h1>Supplier Management</h1>
-
-<a href="{% url 'admin_dashboard' %}">
-    Dashboard
+{% block header_actions %}
+<a href="{% url 'supplier_create' %}" class="btn-primary">
+    <i data-lucide="plus"></i>
+    <span>Add Supplier</span>
 </a>
+{% endblock %}
 
-|
-
-<a href="{% url 'supplier_create' %}">
-    Add Supplier
-</a>
-
-<hr>
-
-{% if messages %}
-
-    {% for message in messages %}
-
-        <p>{{ message }}</p>
-
-    {% endfor %}
-
-{% endif %}
-
-<form method="get">
-
-    <input
-        type="text"
-        name="search"
-        placeholder="Search supplier..."
-        value="{{ search }}"
-    >
-
-    <button type="submit">
-        Search
-    </button>
-
-    <a href="{% url 'supplier_list' %}">
-        Clear
-    </a>
-
-</form>
-
-<hr>
-
-<table border="1" cellpadding="10">
-
-    <thead>
-
-        <tr>
-
-            <th>Company</th>
-            <th>Contact Person</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Actions</th>
-
-        </tr>
-
-    </thead>
-
-    <tbody>
-
-        {% for supplier in suppliers %}
-
-        <tr>
-
-            <td>
-                {{ supplier.company_name }}
-            </td>
-
-            <td>
-                {{ supplier.contact_person|default:"—" }}
-            </td>
-
-            <td>
-                {{ supplier.phone|default:"—" }}
-            </td>
-
-            <td>
-                {{ supplier.email|default:"—" }}
-            </td>
-
-            <td>
-
-                {% if supplier.is_active %}
-                    Active
-                {% else %}
-                    Inactive
-                {% endif %}
-
-            </td>
-
-            <td>
-
-                <a href="{% url 'supplier_update' supplier.id %}">
-                    Edit
-                </a>
-
-                <form
-                    method="post"
-                    action="{% url 'supplier_toggle_status' supplier.id %}"
-                    style="display:inline;"
+{% block content %}
+<div class="card">
+    <div class="table-toolbar">
+        <form method="get" class="toolbar-filters">
+            <div class="search-input-group">
+                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                <input 
+                    type="text" 
+                    name="search" 
+                    placeholder="Search supplier, contact, phone..." 
+                    value="{{ search }}"
+                    autocomplete="off"
                 >
+            </div>
 
-                    {% csrf_token %}
+            <button type="submit" class="btn-secondary">
+                <i data-lucide="filter" style="width: 14px; height: 14px;"></i>
+                <span>Filter</span>
+            </button>
 
-                    <button type="submit">
+            {% if search %}
+            <a href="{% url 'supplier_list' %}" class="btn-secondary" title="Clear Filters">
+                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                <span>Clear</span>
+            </a>
+            {% endif %}
+        </form>
 
-                        {% if supplier.is_active %}
-                            Deactivate
+        <div style="font-size: 13px; color: var(--text-secondary);">
+            Total Suppliers: <strong>{{ suppliers|length }}</strong>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Company Name</th>
+                    <th>Contact Person</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for supplier in suppliers %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; border-radius: var(--radius-sm); background: #EFF6FF; color: var(--accent-primary); display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="truck" style="width: 16px; height: 16px;"></i>
+                            </div>
+                            <strong style="color: var(--text-primary); font-size: 13.5px;">{{ supplier.company_name }}</strong>
+                        </div>
+                    </td>
+                    <td>
+                        {{ supplier.contact_person|default:"—" }}
+                    </td>
+                    <td style="color: var(--text-secondary);">
+                        {{ supplier.phone|default:"—" }}
+                    </td>
+                    <td style="color: var(--text-secondary);">
+                        {{ supplier.email|default:"—" }}
+                    </td>
+                    <td style="color: var(--text-secondary);">
+                        {% if supplier.city or supplier.state %}
+                            {{ supplier.city }}{% if supplier.city and supplier.state %}, {% endif %}{{ supplier.state }}
                         {% else %}
-                            Activate
+                            —
                         {% endif %}
-
-                    </button>
-
-                </form>
-
-            </td>
-
-        </tr>
-
-        {% empty %}
-
-        <tr>
-
-            <td colspan="6">
-                No suppliers found.
-            </td>
-
-        </tr>
-
-        {% endfor %}
-
-    </tbody>
-
-</table>
-
-</body>
-
-</html>
+                    </td>
+                    <td>
+                        {% if supplier.is_active %}
+                            <span class="badge success">Active</span>
+                        {% else %}
+                            <span class="badge neutral">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; align-items: center; gap: 6px;">
+                            <a href="{% url 'supplier_update' supplier.id %}" class="btn-secondary btn-sm" title="Edit Supplier">
+                                <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+                                <span>Edit</span>
+                            </a>
+                            <button type="button" 
+                                    class="btn-secondary btn-sm" 
+                                    style="color: {% if supplier.is_active %}var(--danger){% else %}var(--success){% endif %};"
+                                    onclick="openConfirmModal(
+                                        '{% if supplier.is_active %}Deactivate{% else %}Activate{% endif %} Supplier', 
+                                        'Are you sure you want to {% if supplier.is_active %}deactivate{% else %}activate{% endif %} {{ supplier.company_name|escapejs }}?', 
+                                        '{% url 'supplier_toggle_status' supplier.id %}', 
+                                        '{% if supplier.is_active %}Deactivate{% else %}Activate{% endif %}', 
+                                        {% if supplier.is_active %}true{% else %}false{% endif %}
+                                    )">
+                                <i data-lucide="{% if supplier.is_active %}slash{% else %}check{% endif %}" style="width: 14px; height: 14px;"></i>
+                                <span>{% if supplier.is_active %}Deactivate{% else %}Activate{% endif %}</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i data-lucide="truck"></i>
+                            </div>
+                            <div class="empty-state-title">No suppliers found</div>
+                            <p class="empty-state-text">Add your commercial distributors and suppliers to link inventory purchases.</p>
+                            <a href="{% url 'supplier_create' %}" class="btn-primary" style="margin-top: 12px;">
+                                <i data-lucide="plus"></i>
+                                <span>Add Supplier</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,144 +1,111 @@
-<!DOCTYPE html>
+{% extends 'base.html' %}
 
-<html lang="en">
+{% block title %}Staff Management{% endblock %}
+{% block page_title %}Staff Members{% endblock %}
 
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Staff Management</title>
-
-</head>
-
-<body>
-
-<h1>Staff Management</h1>
-
-<a href="{% url 'admin_dashboard' %}">
-    Dashboard
+{% block header_actions %}
+<a href="{% url 'staff_create' %}" class="btn-primary">
+    <i data-lucide="user-plus"></i>
+    <span>Add Staff Member</span>
 </a>
+{% endblock %}
 
-|
+{% block content %}
+<div class="card">
+    <div class="table-toolbar">
+        <div style="font-weight: 600; font-size: 15px; color: var(--text-primary);">
+            Team Members & Cashiers
+        </div>
+        <div style="font-size: 13px; color: var(--text-secondary);">
+            Total Staff: <strong>{{ staff_members|length }}</strong>
+        </div>
+    </div>
 
-<a href="{% url 'staff_create' %}">
-    Add Staff
-</a>
-
-<hr>
-
-{% if messages %}
-
-    {% for message in messages %}
-
-        <p>
-            {{ message }}
-        </p>
-
-    {% endfor %}
-
-{% endif %}
-
-
-<table border="1" cellpadding="10">
-
-    <thead>
-
-        <tr>
-
-            <th>Username</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Status</th>
-            <th>Action</th>
-
-        </tr>
-
-    </thead>
-
-    <tbody>
-
-        {% for staff in staff_members %}
-
-        <tr>
-
-            <td>
-                {{ staff.username }}
-            </td>
-
-            <td>
-                {{ staff.first_name }}
-                {{ staff.last_name }}
-            </td>
-
-            <td>
-                {{ staff.email }}
-            </td>
-
-            <td>
-                {{ staff.phone_number|default:"—" }}
-            </td>
-
-            <td>
-
-                {% if staff.is_active %}
-
-                    Active
-
-                {% else %}
-
-                    Inactive
-
-                {% endif %}
-
-            </td>
-
-            <td>
-
-                <form
-                    method="post"
-                    action="{% url 'staff_toggle_status' staff.id %}"
-                >
-
-                    {% csrf_token %}
-
-                    <button type="submit">
-
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email Address</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Date Joined</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for staff in staff_members %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="user-avatar" style="width: 34px; height: 34px; font-size: 12px;">
+                                {{ staff.first_name|default:staff.username|make_list|first|upper }}{{ staff.last_name|default:''|make_list|first|upper }}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);">
+                                    {{ staff.get_full_name|default:staff.username }}
+                                </div>
+                                <div style="font-size: 11.5px; color: var(--text-secondary); font-family: monospace;">
+                                    @{{ staff.username }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="color: var(--text-secondary);">
+                        {{ staff.email|default:"—" }}
+                    </td>
+                    <td style="color: var(--text-secondary);">
+                        {{ staff.phone_number|default:"—" }}
+                    </td>
+                    <td>
+                        <span class="badge info">Cashier / Staff</span>
+                    </td>
+                    <td style="font-size: 12.5px; color: var(--text-secondary);">
+                        {{ staff.date_joined|date:"d M Y" }}
+                    </td>
+                    <td>
                         {% if staff.is_active %}
-                            Deactivate
+                            <span class="badge success">Active</span>
                         {% else %}
-                            Activate
+                            <span class="badge danger">Deactivated</span>
                         {% endif %}
-
-                    </button>
-
-                </form>
-
-            </td>
-
-        </tr>
-
-        {% empty %}
-
-        <tr>
-
-            <td colspan="6">
-                No staff members found.
-            </td>
-
-        </tr>
-
-        {% endfor %}
-
-    </tbody>
-
-</table>
-
-</body>
-
-</html>
+                    </td>
+                    <td style="text-align: right;">
+                        <button type="button" 
+                                class="btn-secondary btn-sm" 
+                                style="color: {% if staff.is_active %}var(--danger){% else %}var(--success){% endif %};"
+                                onclick="openConfirmModal(
+                                    '{% if staff.is_active %}Deactivate{% else %}Activate{% endif %} Staff Member', 
+                                    'Are you sure you want to {% if staff.is_active %}deactivate{% else %}activate{% endif %} account for {{ staff.username }}?', 
+                                    '{% url 'staff_toggle_status' staff.id %}', 
+                                    '{% if staff.is_active %}Deactivate{% else %}Activate{% endif %}', 
+                                    {% if staff.is_active %}true{% else %}false{% endif %}
+                                )">
+                            <i data-lucide="{% if staff.is_active %}user-x{% else %}user-check{% endif %}" style="width: 14px; height: 14px;"></i>
+                            <span>{% if staff.is_active %}Deactivate{% else %}Activate{% endif %}</span>
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i data-lucide="users"></i>
+                            </div>
+                            <div class="empty-state-title">No staff accounts found</div>
+                            <p class="empty-state-text">Create staff accounts to give cashiers and managers access to the POS checkout system.</p>
+                            <a href="{% url 'staff_create' %}" class="btn-primary" style="margin-top: 12px;">
+                                <i data-lucide="user-plus"></i>
+                                <span>Add First Staff</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

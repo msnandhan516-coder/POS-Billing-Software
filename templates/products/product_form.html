@@ -1,66 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
+{% block title %}{{ page_title }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
 
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>{{ page_title }} | POS Billing</title>
-
-</head>
-
-<body>
-
-<h1>{{ page_title }}</h1>
-
-<a href="{% url 'product_list' %}">
-    ← Back to Products
+{% block header_actions %}
+<a href="{% url 'product_list' %}" class="btn-secondary">
+    <i data-lucide="arrow-left"></i>
+    <span>Back to Products</span>
 </a>
+{% endblock %}
 
-<hr>
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+    <div class="card-header">
+        <h2 class="card-title">{{ page_title }}</h2>
+        <span style="font-size: 12.5px; color: var(--text-secondary);">Fill in the details below to update your catalog</span>
+    </div>
 
-<form
-    method="post"
-    enctype="multipart/form-data"
->
+    <form method="post" enctype="multipart/form-data" class="card-body">
+        {% csrf_token %}
 
-    {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div style="padding: 12px; background: var(--danger-light); color: var(--danger-text); border-radius: var(--radius-md); margin-bottom: 20px;">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
 
-    {{ form.non_field_errors }}
+        <div class="form-grid">
+            <!-- PRODUCT INFORMATION -->
+            <div class="form-section-title">
+                <i data-lucide="info" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i>
+                Product Information
+            </div>
 
-    {% for field in form %}
+            <div class="form-group full-width">
+                <label class="form-label" for="{{ form.name.id_for_label }}">Product Name *</label>
+                {{ form.name }}
+                {% if form.name.errors %}<div class="form-error">{{ form.name.errors.0 }}</div>{% endif %}
+            </div>
 
-        <div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.sku.id_for_label }}">SKU (Stock Keeping Unit) *</label>
+                {{ form.sku }}
+                {% if form.sku.errors %}<div class="form-error">{{ form.sku.errors.0 }}</div>{% endif %}
+            </div>
 
-            {{ field.label_tag }}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.barcode.id_for_label }}">Barcode / EAN</label>
+                {{ form.barcode }}
+                {% if form.barcode.errors %}<div class="form-error">{{ form.barcode.errors.0 }}</div>{% endif %}
+            </div>
 
-            {{ field }}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.category.id_for_label }}">Category *</label>
+                {{ form.category }}
+                {% if form.category.errors %}<div class="form-error">{{ form.category.errors.0 }}</div>{% endif %}
+            </div>
 
-            {% if field.errors %}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.supplier.id_for_label }}">Supplier</label>
+                {{ form.supplier }}
+                {% if form.supplier.errors %}<div class="form-error">{{ form.supplier.errors.0 }}</div>{% endif %}
+            </div>
 
-                <div>
-                    {{ field.errors }}
+            <!-- DESCRIPTION -->
+            <div class="form-section-title">
+                <i data-lucide="file-text" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i>
+                Description & Media
+            </div>
+
+            <div class="form-group full-width">
+                <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}<div class="form-error">{{ form.description.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group full-width">
+                <label class="form-label" for="{{ form.image.id_for_label }}">Product Thumbnail Image</label>
+                {{ form.image }}
+                {% if form.image.errors %}<div class="form-error">{{ form.image.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- PRICING -->
+            <div class="form-section-title">
+                <i data-lucide="tag" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i>
+                Pricing & Taxation
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.purchase_price.id_for_label }}">Purchase / Cost Price (₹)</label>
+                {{ form.purchase_price }}
+                {% if form.purchase_price.errors %}<div class="form-error">{{ form.purchase_price.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.selling_price.id_for_label }}">Selling Price (₹) *</label>
+                {{ form.selling_price }}
+                {% if form.selling_price.errors %}<div class="form-error">{{ form.selling_price.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group full-width">
+                <label class="form-label" for="{{ form.tax_percentage.id_for_label }}">Tax Rate (% GST / VAT)</label>
+                {{ form.tax_percentage }}
+                {% if form.tax_percentage.errors %}<div class="form-error">{{ form.tax_percentage.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- INVENTORY -->
+            <div class="form-section-title">
+                <i data-lucide="boxes" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i>
+                Inventory Tracking
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.stock_quantity.id_for_label }}">Current Stock Quantity *</label>
+                {{ form.stock_quantity }}
+                {% if form.stock_quantity.errors %}<div class="form-error">{{ form.stock_quantity.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.minimum_stock.id_for_label }}">Minimum Stock Alert Threshold</label>
+                {{ form.minimum_stock }}
+                {% if form.minimum_stock.errors %}<div class="form-error">{{ form.minimum_stock.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- STATUS -->
+            <div class="form-section-title">
+                <i data-lucide="toggle-left" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i>
+                Visibility Status
+            </div>
+
+            <div class="form-group full-width">
+                <div class="form-check">
+                    {{ form.is_active }}
+                    <label class="form-label" for="{{ form.is_active.id_for_label }}" style="margin: 0; cursor: pointer;">
+                        Active Product (available on POS screen and inventory reports)
+                    </label>
                 </div>
-
-            {% endif %}
-
+                {% if form.is_active.errors %}<div class="form-error">{{ form.is_active.errors.0 }}</div>{% endif %}
+            </div>
         </div>
 
-        <br>
-
-    {% endfor %}
-
-    <button type="submit">
-        Save Product
-    </button>
-
-</form>
-
-</body>
-
-</html>
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <a href="{% url 'product_list' %}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">
+                <i data-lucide="save"></i>
+                <span>Save Product</span>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

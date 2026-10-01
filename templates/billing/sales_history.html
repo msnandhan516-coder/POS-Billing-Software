@@ -1,255 +1,182 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
+{% block title %}Sales Transactions{% endblock %}
+{% block page_title %}Transactions{% endblock %}
 
-    <meta charset="UTF-8">
+{% block header_actions %}
+<a href="{% url 'pos' %}" class="btn-primary">
+    <i data-lucide="plus"></i>
+    <span>New Sale</span>
+</a>
+{% endblock %}
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Sales History</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 30px;
-            background: #f3f4f6;
-            font-family: Arial, sans-serif;
-            color: #111827;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: auto;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .header h1 {
-            margin: 0;
-        }
-
-        .header a {
-            text-decoration: none;
-            padding: 10px 18px;
-            background: #2563eb;
-            color: white;
-            border-radius: 6px;
-        }
-
-        .table-container {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            overflow-x: auto;
-            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 14px 12px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        th {
-            background: #f9fafb;
-            font-weight: bold;
-        }
-
-        tr:hover {
-            background: #f9fafb;
-        }
-
-        .status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-
-        .paid {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .view {
-            display: inline-block;
-            padding: 7px 12px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 40px;
-            color: #6b7280;
-        }
-
-    </style>
-
-</head>
-
-<body>
-
-<div class="container">
-
-    <div class="header">
-
-        <h1>
-            Sales History
-        </h1>
-
-        <a href="{% url 'admin_dashboard' %}">
-            Dashboard
-        </a>
-
+{% block content %}
+<!-- KPI Section -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-title">Today's Revenue</span>
+            <div class="kpi-icon-wrap blue">
+                <i data-lucide="indian-rupee"></i>
+            </div>
+        </div>
+        <div class="kpi-value">₹{{ today_revenue|floatformat:2 }}</div>
+        <div class="kpi-trend positive">
+            <span>Completed sales today</span>
+        </div>
     </div>
 
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-title">Total Transactions</span>
+            <div class="kpi-icon-wrap green">
+                <i data-lucide="receipt"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ total_transactions }}</div>
+        <div class="kpi-trend neutral">
+            <span>All time recorded</span>
+        </div>
+    </div>
 
-    <div class="table-container">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-title">Average Order Value</span>
+            <div class="kpi-icon-wrap purple">
+                <i data-lucide="trending-up"></i>
+            </div>
+        </div>
+        <div class="kpi-value">₹{{ avg_order_value|floatformat:2 }}</div>
+        <div class="kpi-trend neutral">
+            <span>Per completed transaction</span>
+        </div>
+    </div>
+</div>
 
-        {% if sales %}
+<div class="card">
+    <!-- Toolbar Filters -->
+    <div class="table-toolbar">
+        <form method="get" class="toolbar-filters">
+            <div class="search-input-group">
+                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                <input 
+                    type="text" 
+                    name="search" 
+                    placeholder="Search invoice, customer, phone..." 
+                    value="{{ search }}"
+                    autocomplete="off"
+                >
+            </div>
 
-        <table>
+            <select name="payment_method" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Payment Methods</option>
+                <option value="CASH" {% if payment_method == 'CASH' %}selected{% endif %}>Cash</option>
+                <option value="CARD" {% if payment_method == 'CARD' %}selected{% endif %}>Card</option>
+                <option value="UPI" {% if payment_method == 'UPI' %}selected{% endif %}>UPI / Digital Wallet</option>
+            </select>
 
+            <button type="submit" class="btn-secondary">
+                <i data-lucide="filter" style="width: 14px; height: 14px;"></i>
+                <span>Filter</span>
+            </button>
+
+            {% if search or payment_method %}
+            <a href="{% url 'sales_history' %}" class="btn-secondary" title="Clear Filters">
+                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                <span>Clear</span>
+            </a>
+            {% endif %}
+        </form>
+
+        <div style="font-size: 13px; color: var(--text-secondary);">
+            Total Records: <strong>{{ sales|length }}</strong>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="table-responsive">
+        <table class="data-table">
             <thead>
-
                 <tr>
-
-                    <th>
-                        Invoice
-                    </th>
-
-                    <th>
-                        Date
-                    </th>
-
-                    <th>
-                        Customer
-                    </th>
-
-                    <th>
-                        Staff
-                    </th>
-
-                    <th>
-                        Payment
-                    </th>
-
-                    <th>
-                        Status
-                    </th>
-
-                    <th>
-                        Total
-                    </th>
-
-                    <th>
-                        Action
-                    </th>
-
+                    <th>Invoice</th>
+                    <th>Date & Time</th>
+                    <th>Customer</th>
+                    <th>Cashier</th>
+                    <th>Payment</th>
+                    <th>Subtotal</th>
+                    <th>Tax</th>
+                    <th>Discount</th>
+                    <th>Grand Total</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
                 </tr>
-
             </thead>
-
-
             <tbody>
-
                 {% for sale in sales %}
-
                 <tr>
-
                     <td>
-                        <strong>
+                        <a href="{% url 'invoice' sale.invoice_number %}" style="text-decoration: none; font-weight: 700; color: var(--accent-primary); font-family: monospace;">
                             {{ sale.invoice_number }}
-                        </strong>
+                        </a>
                     </td>
-
-                    <td>
+                    <td style="font-size: 12.5px; color: var(--text-secondary);">
                         {{ sale.created_at|date:"d M Y, h:i A" }}
                     </td>
-
                     <td>
-                        {{ sale.customer_name|default:"Walk-in Customer" }}
+                        <div style="font-weight: 600;">{{ sale.customer_name|default:"Walk-in Customer" }}</div>
+                        {% if sale.customer_phone %}<div style="font-size: 11px; color: var(--text-muted);">{{ sale.customer_phone }}</div>{% endif %}
                     </td>
-
                     <td>
                         {{ sale.staff.username }}
                     </td>
-
                     <td>
-                        {{ sale.payment_method }}
+                        <span class="badge info">{{ sale.payment_method }}</span>
                     </td>
-
                     <td>
-
-                        <span class="status paid">
-                            {{ sale.payment_status }}
-                        </span>
-
+                        ₹{{ sale.subtotal|floatformat:2 }}
                     </td>
-
                     <td>
-                        ₹{{ sale.total_amount }}
+                        ₹{{ sale.tax_amount|floatformat:2 }}
                     </td>
-
                     <td>
-
-                        <a
-                            class="view"
-                            href="{% url 'invoice' sale.invoice_number %}"
-                        >
-                            View Invoice
+                        {% if sale.discount_amount > 0 %}
+                            <span style="color: var(--danger);">-₹{{ sale.discount_amount|floatformat:2 }}</span>
+                        {% else %}
+                            ₹0.00
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="font-size: 14px; color: var(--accent-primary);">₹{{ sale.total_amount|floatformat:2 }}</strong>
+                    </td>
+                    <td>
+                        <span class="badge success">{{ sale.payment_status }}</span>
+                    </td>
+                    <td style="text-align: right;">
+                        <a href="{% url 'invoice' sale.invoice_number %}" class="btn-secondary btn-sm" title="View & Print Invoice">
+                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                            <span>Invoice</span>
                         </a>
-
                     </td>
-
                 </tr>
-
+                {% empty %}
+                <tr>
+                    <td colspan="11">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i data-lucide="receipt"></i>
+                            </div>
+                            <div class="empty-state-title">No transactions found</div>
+                            <p class="empty-state-text">No sales match your current search or filter. Start a new checkout on the POS screen to record transactions.</p>
+                            <a href="{% url 'pos' %}" class="btn-primary" style="margin-top: 12px;">
+                                <i data-lucide="plus"></i>
+                                <span>Go to POS</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
-
             </tbody>
-
         </table>
-
-        {% else %}
-
-        <div class="empty">
-
-            No sales have been recorded yet.
-
-        </div>
-
-        {% endif %}
-
     </div>
-
 </div>
-
-</body>
-
-</html>
+{% endblock %}

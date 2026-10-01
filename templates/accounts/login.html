@@ -1,34 +1,292 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Login</title>
-</head>
+    <title>Sign In | RetailPOS Enterprise</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            background-color: #F7F8FA;
+        }
+
+        .login-brand-side {
+            flex: 1.1;
+            background-color: #0F172A;
+            color: #FFFFFF;
+            padding: 60px 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-brand-side::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.25) 0%, rgba(15, 23, 42, 0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .login-brand-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .login-brand-logo-icon {
+            width: 40px;
+            height: 40px;
+            background-color: #2563EB;
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-brand-logo-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .login-brand-name {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .login-brand-hero {
+            max-width: 520px;
+            z-index: 2;
+        }
+
+        .login-brand-headline {
+            font-size: 34px;
+            font-weight: 800;
+            line-height: 1.25;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .login-brand-sub {
+            font-size: 15px;
+            color: #94A3B8;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .login-features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .login-feature-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 14px;
+            color: #E2E8F0;
+        }
+
+        .login-feature-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #60A5FA;
+            flex-shrink: 0;
+        }
+
+        .login-brand-footer {
+            font-size: 12.5px;
+            color: #64748B;
+            z-index: 2;
+        }
+
+        /* Form Side */
+        .login-form-side {
+            flex: 0.9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 420px;
+            background-color: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 14px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 40px;
+        }
+
+        .login-box-header {
+            margin-bottom: 28px;
+        }
+
+        .login-box-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+
+        .login-box-subtitle {
+            font-size: 13.5px;
+            color: #6B7280;
+        }
+
+        .login-submit-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 14.5px;
+            font-weight: 600;
+        }
+
+        .login-credentials-hint {
+            margin-top: 24px;
+            padding: 12px 14px;
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #475569;
+        }
+
+        @media (max-width: 900px) {
+            .login-wrapper {
+                flex-direction: column;
+            }
+            .login-brand-side {
+                padding: 40px 24px;
+            }
+            .login-brand-headline {
+                font-size: 26px;
+            }
+            .login-form-side {
+                padding: 30px 16px;
+            }
+        }
+    </style>
+</head>
 <body>
 
-    <h1>POS Billing</h1>
-
-    <form method="post">
-        {% csrf_token %}
-
-        {{ form.non_field_errors }}
-
-        <div>
-            {{ form.username.label_tag }}
-            {{ form.username }}
+<div class="login-wrapper">
+    <!-- Left Branding Panel -->
+    <div class="login-brand-side">
+        <div class="login-brand-top">
+            <div class="login-brand-logo-icon">
+                <i data-lucide="shopping-bag"></i>
+            </div>
+            <span class="login-brand-name">RetailPOS</span>
         </div>
 
-        <div>
-            {{ form.password.label_tag }}
-            {{ form.password }}
+        <div class="login-brand-hero">
+            <h1 class="login-brand-headline">Enterprise Retail Point of Sale & Billing System</h1>
+            <p class="login-brand-sub">
+                Engineered for speed, inventory accuracy, and frictionless checkout workflows for modern retail operations.
+            </p>
+
+            <div class="login-features-list">
+                <div class="login-feature-item">
+                    <div class="login-feature-icon">
+                        <i data-lucide="zap" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <span>High-velocity cashier checkout with barcode scanner integration</span>
+                </div>
+                <div class="login-feature-item">
+                    <div class="login-feature-icon">
+                        <i data-lucide="box" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <span>Real-time inventory decrement with automated low-stock warnings</span>
+                </div>
+                <div class="login-feature-item">
+                    <div class="login-feature-icon">
+                        <i data-lucide="bar-chart-3" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <span>Comprehensive revenue analytics and printable tax invoices</span>
+                </div>
+            </div>
         </div>
 
-        <button type="submit">
-            Sign In
-        </button>
-    </form>
+        <div class="login-brand-footer">
+            &copy; 2026 RetailPOS Systems. Commercial Retail Edition.
+        </div>
+    </div>
 
+    <!-- Right Login Card Panel -->
+    <div class="login-form-side">
+        <div class="login-box">
+            <div class="login-box-header">
+                <h2 class="login-box-title">Sign in to your account</h2>
+                <p class="login-box-subtitle">Enter your cashier or administrator credentials to begin</p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div style="padding: 10px 14px; background: var(--danger-light); color: var(--danger-text); border-radius: var(--radius-md); font-size: 13px; font-weight: 500; margin-bottom: 20px;">
+                    {{ form.non_field_errors.0 }}
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <div class="form-error">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group" style="margin-bottom: 22px;">
+                    <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <div class="form-error">{{ form.password.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn-primary login-submit-btn">
+                    <i data-lucide="log-in" style="width: 18px; height: 18px;"></i>
+                    <span>Sign In to Terminal</span>
+                </button>
+            </form>
+
+            <div class="login-credentials-hint">
+                <div style="font-weight: 600; margin-bottom: 4px; color: #1E293B;">Demo Accounts Available:</div>
+                <div>• Admin: <strong>Nandhan</strong> (Full Management & Analytics)</div>
+                <div>• Cashier: <strong>bins_7</strong> (POS Billing & Checkout)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
 </body>
 </html>

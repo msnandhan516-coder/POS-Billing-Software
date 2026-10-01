@@ -1,64 +1,113 @@
-<!DOCTYPE html>
+{% extends 'base.html' %}
 
-<html lang="en">
+{% block title %}{{ page_title }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
 
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>{{ page_title }} | POS Billing</title>
-
-</head>
-
-<body>
-
-<h1>{{ page_title }}</h1>
-
-<a href="{% url 'supplier_list' %}">
-    ← Back to Suppliers
+{% block header_actions %}
+<a href="{% url 'supplier_list' %}" class="btn-secondary">
+    <i data-lucide="arrow-left"></i>
+    <span>Back to Suppliers</span>
 </a>
+{% endblock %}
 
-<hr>
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <div class="card-header">
+        <h2 class="card-title">{{ page_title }}</h2>
+        <span style="font-size: 12.5px; color: var(--text-secondary);">Supplier and vendor contact details</span>
+    </div>
 
-<form method="post">
+    <form method="post" class="card-body">
+        {% csrf_token %}
 
-    {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div style="padding: 12px; background: var(--danger-light); color: var(--danger-text); border-radius: var(--radius-md); margin-bottom: 20px;">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
 
-    {{ form.non_field_errors }}
+        <div class="form-grid">
+            <div class="form-section-title">
+                <i data-lucide="briefcase" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i>
+                Company Information
+            </div>
 
-    {% for field in form %}
+            <div class="form-group full-width">
+                <label class="form-label" for="{{ form.company_name.id_for_label }}">Company / Vendor Name *</label>
+                {{ form.company_name }}
+                {% if form.company_name.errors %}<div class="form-error">{{ form.company_name.errors.0 }}</div>{% endif %}
+            </div>
 
-        <div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.contact_person.id_for_label }}">Contact Person *</label>
+                {{ form.contact_person }}
+                {% if form.contact_person.errors %}<div class="form-error">{{ form.contact_person.errors.0 }}</div>{% endif %}
+            </div>
 
-            {{ field.label_tag }}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.gst_number.id_for_label }}">GSTIN / Tax ID</label>
+                {{ form.gst_number }}
+                {% if form.gst_number.errors %}<div class="form-error">{{ form.gst_number.errors.0 }}</div>{% endif %}
+            </div>
 
-            {{ field }}
+            <div class="form-section-title">
+                <i data-lucide="phone-call" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i>
+                Contact & Communication
+            </div>
 
-            {% if field.errors %}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.phone.id_for_label }}">Phone Number *</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}<div class="form-error">{{ form.phone.errors.0 }}</div>{% endif %}
+            </div>
 
-                <div>
-                    {{ field.errors }}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.email.id_for_label }}">Email Address</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="form-error">{{ form.email.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group full-width">
+                <label class="form-label" for="{{ form.address.id_for_label }}">Business Address</label>
+                {{ form.address }}
+                {% if form.address.errors %}<div class="form-error">{{ form.address.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.city.id_for_label }}">City</label>
+                {{ form.city }}
+                {% if form.city.errors %}<div class="form-error">{{ form.city.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.state.id_for_label }}">State / Region</label>
+                {{ form.state }}
+                {% if form.state.errors %}<div class="form-error">{{ form.state.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-section-title">
+                <i data-lucide="toggle-left" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i>
+                Supplier Status
+            </div>
+
+            <div class="form-group full-width">
+                <div class="form-check">
+                    {{ form.is_active }}
+                    <label class="form-label" for="{{ form.is_active.id_for_label }}" style="margin: 0; cursor: pointer;">
+                        Active Supplier (available for product assignments)
+                    </label>
                 </div>
-
-            {% endif %}
-
+                {% if form.is_active.errors %}<div class="form-error">{{ form.is_active.errors.0 }}</div>{% endif %}
+            </div>
         </div>
 
-        <br>
-
-    {% endfor %}
-
-    <button type="submit">
-        Save Supplier
-    </button>
-
-</form>
-
-</body>
-
-</html>
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <a href="{% url 'supplier_list' %}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">
+                <i data-lucide="save"></i>
+                <span>Save Supplier</span>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

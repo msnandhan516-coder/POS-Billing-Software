@@ -1,0 +1,241 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RetailPOS{% endblock %} | Enterprise POS</title>
+
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Design System CSS -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<div class="app-layout">
+    <!-- Left Navigation Sidebar -->
+    <aside class="app-sidebar" id="appSidebar">
+        <div class="sidebar-header">
+            <a href="{% if user.role == 'ADMIN' %}{% url 'admin_dashboard' %}{% else %}{% url 'pos' %}{% endif %}" class="brand-logo">
+                <div class="brand-icon">
+                    <i data-lucide="shopping-bag"></i>
+                </div>
+                <span>RetailPOS</span>
+            </a>
+            <button type="button" class="sidebar-toggle-btn" id="sidebarToggle" title="Toggle Sidebar">
+                <i data-lucide="menu"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">Overview</div>
+            {% if user.role == 'ADMIN' %}
+            <a href="{% url 'admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Dashboard</span>
+            </a>
+            {% endif %}
+
+            <div class="nav-section-title">Sales</div>
+            <a href="{% url 'pos' %}" class="nav-link {% if request.resolver_match.url_name == 'pos' %}active{% endif %}">
+                <i data-lucide="badge-percent"></i>
+                <span>New Sale (POS)</span>
+            </a>
+            <a href="{% url 'sales_history' %}" class="nav-link {% if request.resolver_match.url_name == 'sales_history' or request.resolver_match.url_name == 'invoice' %}active{% endif %}">
+                <i data-lucide="receipt"></i>
+                <span>Transactions</span>
+            </a>
+
+            {% if user.role == 'ADMIN' %}
+            <div class="nav-section-title">Inventory</div>
+            <a href="{% url 'product_list' %}" class="nav-link {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+                <i data-lucide="package"></i>
+                <span>Products</span>
+            </a>
+
+            <div class="nav-section-title">Management</div>
+            <a href="{% url 'staff_list' %}" class="nav-link {% if 'staff' in request.resolver_match.url_name %}active{% endif %}">
+                <i data-lucide="users"></i>
+                <span>Staff Members</span>
+            </a>
+            <a href="{% url 'supplier_list' %}" class="nav-link {% if 'supplier' in request.resolver_match.url_name %}active{% endif %}">
+                <i data-lucide="truck"></i>
+                <span>Suppliers</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-profile-card">
+                <div class="user-avatar">
+                    {{ user.first_name|default:user.username|make_list|first|upper }}{{ user.last_name|default:''|make_list|first|upper }}
+                </div>
+                <div class="user-info">
+                    <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="user-role">
+                        <span class="user-role-badge">
+                            {% if user.role == 'ADMIN' %}Administrator{% else %}Cashier{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <a href="{% url 'logout' %}" class="logout-icon-btn" title="Sign Out">
+                    <i data-lucide="log-out"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="app-main">
+        <!-- Top Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="header-title-wrap">
+                    <h1 class="header-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                    {% block page_badge %}{% endblock %}
+                </div>
+            </div>
+
+            <div class="header-right">
+                {% block header_actions %}
+                <div class="header-btn" title="System Status: Connected">
+                    <i data-lucide="wifi" style="color: var(--success); width: 14px; height: 14px;"></i>
+                    <span style="font-size: 12px; color: var(--text-secondary);">Online</span>
+                </div>
+                {% endblock %}
+                
+                <a href="{% url 'pos' %}" class="header-btn primary">
+                    <i data-lucide="plus-circle"></i>
+                    <span>New Sale</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <main class="app-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<!-- Reusable Confirmation Modal -->
+<div class="modal-backdrop" id="confirmModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title" id="confirmModalTitle">Confirm Action</h3>
+            <button type="button" class="sidebar-toggle-btn" onclick="closeConfirmModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="confirmModalMessage">
+            Are you sure you want to proceed with this action?
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+            <form id="confirmModalForm" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-danger" id="confirmModalSubmitBtn">Confirm</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications Container -->
+<div class="toast-container" id="toastContainer">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="toast {% if message.tags %}{{ message.tags }}{% endif %}">
+                <i data-lucide="{% if 'success' in message.tags %}check-circle{% elif 'error' in message.tags or 'danger' in message.tags %}alert-circle{% else %}info{% endif %}"></i>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Auto-dismiss toasts after 4 seconds
+    setTimeout(() => {
+        document.querySelectorAll('.toast').forEach(toast => {
+            toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            setTimeout(() => toast.remove(), 300);
+        });
+    }, 4000);
+
+    // Toast helper for JS
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        let iconName = 'info';
+        if (type === 'success') iconName = 'check-circle';
+        if (type === 'danger' || type === 'error') iconName = 'alert-circle';
+        if (type === 'warning') iconName = 'alert-triangle';
+
+        toast.innerHTML = `<i data-lucide="${iconName}"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        lucide.createIcons();
+
+        setTimeout(() => {
+            toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // Modal Confirmation Dialog Helper
+    function openConfirmModal(title, message, actionUrl, submitText = 'Confirm', isDanger = true) {
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalMessage').textContent = message;
+        const form = document.getElementById('confirmModalForm');
+        form.action = actionUrl;
+        const btn = document.getElementById('confirmModalSubmitBtn');
+        btn.textContent = submitText;
+        btn.className = isDanger ? 'btn-danger' : 'btn-primary';
+        document.getElementById('confirmModal').classList.add('active');
+        lucide.createIcons();
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.remove('active');
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('confirmModal').addEventListener('click', function(e) {
+        if (e.target === this) closeConfirmModal();
+    });
+
+    // Sidebar collapse toggle
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('appSidebar');
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', () => {
+            if (window.innerWidth <= 900) {
+                sidebar.classList.toggle('mobile-open');
+            }
+        });
+    }
+</script>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

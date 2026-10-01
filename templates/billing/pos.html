@@ -1,1255 +1,627 @@
-
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>POS Billing</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            color: #1f2937;
-        }
-
-        .header {
-            background: #1f2937;
-            color: white;
-            padding: 18px 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            margin: 0;
-        }
-
-        .header a {
-            color: white;
-            text-decoration: none;
-        }
-
-        .pos-container {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            gap: 20px;
-            padding: 20px;
-            max-width: 1600px;
-            margin: auto;
-        }
-
-        .panel {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        }
-
-        .panel h2 {
-            margin-top: 0;
-        }
-
-        .search {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-
-        .products {
-            display: grid;
-            grid-template-columns: repeat(
-                auto-fill,
-                minmax(180px, 1fr)
-            );
-            gap: 15px;
-        }
-
-        .product {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            transition: 0.2s ease;
-        }
-
-        .product:hover {
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .product h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-
-        .product p {
-            margin: 7px 0;
-        }
-
-        .product button {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            background: #2563eb;
-            color: white;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-
-        .product button:hover {
-            background: #1d4ed8;
-        }
-
-        .product button:disabled {
-            background: #999;
-            cursor: not-allowed;
-        }
-
-        .cart-item {
-            border-bottom: 1px solid #eee;
-            padding: 12px 0;
-        }
-
-        .cart-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .quantity-controls button {
-            width: 30px;
-            height: 30px;
-            border: 1px solid #ddd;
-            background: white;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-
-        .quantity-controls button:hover {
-            background: #f3f4f6;
-        }
-
-        .remove {
-            color: #dc2626;
-            border: none;
-            background: none;
-            cursor: pointer;
-        }
-
-        .remove:hover {
-            text-decoration: underline;
-        }
-
-        .summary {
-            border-top: 2px solid #eee;
-            margin-top: 20px;
-            padding-top: 15px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0;
-        }
-
-        .total {
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .field {
-            margin-top: 12px;
-        }
-
-        .field label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-
-        .field input,
-        .field select {
-            width: 100%;
-            padding: 11px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-        }
-
-        .checkout {
-            width: 100%;
-            padding: 14px;
-            margin-top: 20px;
-            border: none;
-            border-radius: 7px;
-            background: #16a34a;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .checkout:hover {
-            background: #15803d;
-        }
-
-        .checkout:disabled {
-            background: #999;
-            cursor: not-allowed;
-        }
-
-        .message {
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 6px;
-            display: none;
-        }
-
-        .success {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .empty-cart {
-            color: #6b7280;
-            text-align: center;
-            padding: 30px 10px;
-        }
-
-        @media (max-width: 900px) {
-
-            .pos-container {
-                grid-template-columns: 1fr;
-            }
-
-        }
-
-    </style>
-
-</head>
-
-
-<body>
-
-<header class="header">
-
-    <h1>POS Billing</h1>
-
-    <a href="{% url 'admin_dashboard' %}">
-        Dashboard
-    </a>
-
-</header>
-
-
-<main class="pos-container">
-
-
-    <!-- PRODUCTS -->
-
-    <section class="panel">
-
-        <h2>Products</h2>
-
-        <input
-            type="text"
-            id="productSearch"
-            class="search"
-            placeholder="Search product, SKU or barcode..."
-            autocomplete="off"
-        >
-
-        <div
-            class="products"
-            id="productList"
-        >
-
-            {% for product in products %}
-
-            <div
-                class="product"
-                data-name="{{ product.name|lower }}"
-                data-sku="{{ product.sku|lower }}"
-                data-barcode="{{ product.barcode|lower }}"
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Point of Sale{% endblock %}
+{% block page_title %}New Sale{% endblock %}
+{% block page_badge %}
+<span class="header-receipt-badge" id="receiptNumberBadge">Receipt #{{ next_invoice_number }}</span>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'sales_history' %}" class="header-btn" title="View Transaction History">
+    <i data-lucide="history"></i>
+    <span>History</span>
+</a>
+<button type="button" class="header-btn" onclick="openShortcutsModal()" title="Keyboard Shortcuts">
+    <i data-lucide="keyboard"></i>
+    <span>Shortcuts</span>
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="pos-viewport">
+    <!-- LEFT PANEL: Catalog -->
+    <div class="pos-catalog-panel">
+        <!-- Search Bar -->
+        <div class="pos-search-wrapper">
+            <span class="pos-search-icon-left">
+                <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+            </span>
+            <input 
+                type="text" 
+                id="productSearch" 
+                class="pos-search-input" 
+                placeholder="Search products by name, SKU or scan barcode..."
+                autocomplete="off"
+                autofocus
             >
+            <span class="pos-search-icon-right" title="Barcode Scanner Ready">
+                <i data-lucide="scan" style="width: 20px; height: 20px;"></i>
+            </span>
+        </div>
 
-                <h3>
-                    {{ product.name }}
-                </h3>
+        <!-- Category Pills -->
+        <div class="pos-category-scroll" id="categoryScroll">
+            <button type="button" class="category-pill active" data-category="all" onclick="filterCategory('all', this)">
+                All Products
+            </button>
+            {% for category in categories %}
+            <button type="button" class="category-pill" data-category="{{ category.id }}" onclick="filterCategory('{{ category.id }}', this)">
+                {{ category.name }}
+            </button>
+            {% endfor %}
+        </div>
 
-                <p>
-                    SKU: {{ product.sku }}
-                </p>
-
-                <p>
-                    Barcode: {{ product.barcode }}
-                </p>
-
-                <p>
-                    ₹{{ product.selling_price }}
-                </p>
-
-                <p>
-                    Tax:
-                    {{ product.tax_percentage }}%
-                </p>
-
-                <p>
-                    Stock:
-                    <span class="stock">
-                        {{ product.stock_quantity }}
-                    </span>
-                </p>
-
-                <button
-                    type="button"
-                    class="add-to-cart"
-                    data-id="{{ product.id }}"
-                    data-name="{{ product.name }}"
-                    data-price="{{ product.selling_price }}"
-                    data-tax="{{ product.tax_percentage }}"
-                    data-stock="{{ product.stock_quantity }}"
-                    {% if product.stock_quantity <= 0 %}
-                        disabled
+        <!-- Products Grid -->
+        <div class="pos-products-grid" id="posProductGrid">
+            {% for product in products %}
+            <div class="pos-product-card" 
+                 data-id="{{ product.id }}"
+                 data-name="{{ product.name|lower }}"
+                 data-sku="{{ product.sku|lower }}"
+                 data-barcode="{{ product.barcode|default:''|lower }}"
+                 data-category="{{ product.category_id }}"
+                 data-price="{{ product.selling_price }}"
+                 data-tax="{{ product.tax_percentage }}"
+                 data-stock="{{ product.stock_quantity }}">
+                <div class="product-img-wrapper">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+                    {% elif product.category.name == 'Smartphones' %}
+                        <div class="product-placeholder-icon" style="color: #2563EB;">
+                            <i data-lucide="smartphone" style="width: 48px; height: 48px;"></i>
+                        </div>
+                    {% elif product.category.name == 'Laptops' %}
+                        <div class="product-placeholder-icon" style="color: #475569;">
+                            <i data-lucide="laptop" style="width: 52px; height: 52px;"></i>
+                        </div>
+                    {% elif product.category.name == 'Audio' %}
+                        <div class="product-placeholder-icon" style="color: #7C3AED;">
+                            <i data-lucide="headphones" style="width: 48px; height: 48px;"></i>
+                        </div>
+                    {% elif product.category.name == 'Accessories' %}
+                        <div class="product-placeholder-icon" style="color: #D97706;">
+                            <i data-lucide="battery-charging" style="width: 48px; height: 48px;"></i>
+                        </div>
+                    {% elif product.category.name == 'Peripherals' %}
+                        <div class="product-placeholder-icon" style="color: #0D9488;">
+                            <i data-lucide="mouse" style="width: 48px; height: 48px;"></i>
+                        </div>
+                    {% elif product.category.name == 'Networking' %}
+                        <div class="product-placeholder-icon" style="color: #0284C7;">
+                            <i data-lucide="wifi" style="width: 48px; height: 48px;"></i>
+                        </div>
+                    {% else %}
+                        <div class="product-placeholder-icon">
+                            <i data-lucide="package" style="width: 44px; height: 44px;"></i>
+                        </div>
                     {% endif %}
-                >
-                    Add to Cart
+                </div>
+                <div class="pos-product-title" title="{{ product.name }}">{{ product.name }}</div>
+                <div class="pos-product-sku">SKU: {{ product.sku }}</div>
+                
+                <div class="pos-product-bottom">
+                    <div>
+                        <div class="pos-product-price">₹{{ product.selling_price|floatformat:2 }}</div>
+                        <div class="stock-status-badge {% if product.stock_quantity <= 0 %}out-of-stock{% elif product.is_low_stock %}low-stock{% else %}in-stock{% endif %}">
+                            {% if product.stock_quantity <= 0 %}
+                                Out of Stock
+                            {% elif product.is_low_stock %}
+                                Low Stock: {{ product.stock_quantity }}
+                            {% else %}
+                                In Stock: {{ product.stock_quantity }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <button type="button" 
+                            class="add-btn-icon" 
+                            title="Add to Sale"
+                            {% if product.stock_quantity <= 0 %}disabled{% endif %}
+                            onclick="addToCart({{ product.id }}, '{{ product.name|escapejs }}', '{{ product.sku|escapejs }}', {{ product.selling_price }}, {{ product.tax_percentage }}, {{ product.stock_quantity }}, '{% if product.image %}{{ product.image.url }}{% endif %}')">
+                        <i data-lucide="plus"></i>
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-state-icon">
+                    <i data-lucide="package-x"></i>
+                </div>
+                <div class="empty-state-title">No Active Products Available</div>
+                <p class="empty-state-text">There are currently no active products in your inventory. Add products to start selling.</p>
+                <a href="{% url 'product_create' %}" class="btn-primary" style="margin-top: 10px;">
+                    <i data-lucide="plus"></i>
+                    <span>Add First Product</span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: Current Sale / Cart -->
+    <div class="pos-cart-panel">
+        <!-- Customer Selection Card -->
+        <div class="customer-select-card">
+            <div class="customer-card-header">
+                <span class="customer-label">Customer</span>
+                <button type="button" class="add-customer-btn" onclick="toggleCustomerModal()">
+                    <i data-lucide="user-plus" style="width: 14px; height: 14px; vertical-align: middle;"></i>
+                    <span>Edit / Add</span>
+                </button>
+            </div>
+            <div class="customer-dropdown-trigger" onclick="toggleCustomerModal()">
+                <div class="customer-avatar-inline">
+                    <i data-lucide="user"></i>
+                </div>
+                <div class="customer-info-inline">
+                    <div class="customer-name-inline" id="displayCustomerName">Walk-in Customer</div>
+                    <div class="customer-sub-inline" id="displayCustomerPhone">No loyalty points</div>
+                </div>
+                <i data-lucide="chevron-down" style="color: var(--text-muted); width: 16px; height: 16px;"></i>
+            </div>
+        </div>
+
+        <!-- Cart Items Card -->
+        <div class="cart-items-card">
+            <div class="cart-items-header">
+                <span class="cart-items-title">Cart Items</span>
+                <span class="cart-badge" id="cartCountBadge">0 items</span>
+            </div>
+
+            <!-- Cart Items List Container -->
+            <div class="cart-items-list" id="cartItemsContainer">
+                <div class="cart-empty-message" id="cartEmptyState">
+                    <i data-lucide="shopping-cart" style="width: 32px; height: 32px; color: var(--text-muted);"></i>
+                    <span style="font-size: 13px;">Cart is empty</span>
+                    <span style="font-size: 11.5px; color: var(--text-muted);">Click on items to add them to this sale</span>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="cart-summary-section">
+                <div class="summary-line">
+                    <span>Subtotal</span>
+                    <span id="subtotalDisplay">₹0.00</span>
+                </div>
+                <div class="summary-line">
+                    <span>VAT / Tax</span>
+                    <span id="taxDisplay">₹0.00</span>
+                </div>
+                <div class="summary-line" id="discountLine" style="color: var(--danger); display: none;">
+                    <span>Discount</span>
+                    <span id="discountDisplay">-₹0.00</span>
+                </div>
+                <div class="summary-line total">
+                    <span>Total</span>
+                    <span class="summary-total-val" id="grandTotalDisplay">₹0.00</span>
+                </div>
+
+                <!-- Discount Trigger Button -->
+                <button type="button" class="cart-discount-btn" id="discountToggleBtn" onclick="toggleDiscountField()">
+                    <i data-lucide="tag" style="width: 14px; height: 14px;"></i>
+                    <span>Apply Discount / Coupon</span>
                 </button>
 
+                <div class="discount-input-row" id="discountInputRow">
+                    <input type="number" id="discountAmountInput" placeholder="Discount ₹" min="0" step="0.01" value="0" oninput="updateTotals()">
+                    <button type="button" class="btn-secondary btn-sm" onclick="toggleDiscountField()">Done</button>
+                </div>
             </div>
 
-            {% empty %}
-
-            <p>
-                No active products available.
-            </p>
-
-            {% endfor %}
-
-        </div>
-
-    </section>
-
-
-    <!-- CART -->
-
-    <section class="panel">
-
-        <h2>Cart</h2>
-
-        <div id="cart">
-
-            <div class="empty-cart">
-                Cart is empty.
+            <!-- Payment Methods Grid -->
+            <div class="payment-methods-grid">
+                <button type="button" class="pay-btn card" data-method="CARD" onclick="selectPaymentMethod('CARD', this)">
+                    <i data-lucide="credit-card"></i>
+                    <span>Card</span>
+                </button>
+                <button type="button" class="pay-btn cash active" data-method="CASH" onclick="selectPaymentMethod('CASH', this)">
+                    <i data-lucide="banknote"></i>
+                    <span>Cash</span>
+                </button>
+                <button type="button" class="pay-btn wallet" data-method="UPI" onclick="selectPaymentMethod('UPI', this)">
+                    <i data-lucide="smartphone"></i>
+                    <span>UPI / Wallet</span>
+                </button>
+                <button type="button" class="pay-btn split" data-method="CARD" onclick="selectPaymentMethod('CARD', this)">
+                    <i data-lucide="layers"></i>
+                    <span>Split / Other</span>
+                </button>
             </div>
 
+            <!-- Complete Sale Action -->
+            <button type="button" class="complete-sale-btn" id="checkoutBtn" onclick="processCheckout()">
+                <i data-lucide="check-circle-2"></i>
+                <span>Complete Sale</span>
+            </button>
         </div>
+    </div>
+</div>
 
-
-        <!-- CUSTOMER -->
-
-        <div class="field">
-
-            <label for="customerName">
-                Customer Name
-            </label>
-
-            <input
-                type="text"
-                id="customerName"
-                placeholder="Optional"
-                autocomplete="off"
-            >
-
+<!-- Customer Details Modal -->
+<div class="modal-backdrop" id="customerModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title">Customer Details</h3>
+            <button type="button" class="sidebar-toggle-btn" onclick="toggleCustomerModal()">
+                <i data-lucide="x"></i>
+            </button>
         </div>
-
-
-        <div class="field">
-
-            <label for="customerPhone">
-                Customer Phone
-            </label>
-
-            <input
-                type="text"
-                id="customerPhone"
-                placeholder="Optional"
-                autocomplete="off"
-            >
-
-        </div>
-
-
-        <!-- DISCOUNT -->
-
-        <div class="field">
-
-            <label for="discount">
-                Discount
-            </label>
-
-            <input
-                type="number"
-                id="discount"
-                value="0"
-                min="0"
-                step="0.01"
-            >
-
-        </div>
-
-
-        <!-- PAYMENT -->
-
-        <div class="field">
-
-            <label for="paymentMethod">
-                Payment Method
-            </label>
-
-            <select id="paymentMethod">
-
-                <option value="CASH">
-                    Cash
-                </option>
-
-                <option value="CARD">
-                    Card
-                </option>
-
-                <option value="UPI">
-                    UPI
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <!-- SUMMARY -->
-
-        <div class="summary">
-
-            <div class="summary-row">
-
-                <span>
-                    Subtotal
-                </span>
-
-                <span id="subtotal">
-                    ₹0.00
-                </span>
-
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label" for="customerNameInput">Customer Name</label>
+                <input type="text" id="customerNameInput" class="form-control" placeholder="e.g. John Doe (Leave blank for Walk-in)">
             </div>
-
-
-            <div class="summary-row">
-
-                <span>
-                    Tax
-                </span>
-
-                <span id="tax">
-                    ₹0.00
-                </span>
-
+            <div class="form-group">
+                <label class="form-label" for="customerPhoneInput">Phone Number</label>
+                <input type="text" id="customerPhoneInput" class="form-control" placeholder="e.g. +91 98765 43210">
             </div>
-
-
-            <div class="summary-row">
-
-                <span>
-                    Discount
-                </span>
-
-                <span id="discountAmount">
-                    ₹0.00
-                </span>
-
+            <div class="form-group">
+                <label class="form-label" for="saleNotesInput">Order Notes / Reference</label>
+                <input type="text" id="saleNotesInput" class="form-control" placeholder="Optional order instructions">
             </div>
-
-
-            <div class="summary-row total">
-
-                <span>
-                    Total
-                </span>
-
-                <span id="total">
-                    ₹0.00
-                </span>
-
-            </div>
-
         </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="toggleCustomerModal()">Cancel</button>
+            <button type="button" class="btn-primary" onclick="saveCustomerDetails()">Save Details</button>
+        </div>
+    </div>
+</div>
 
+<!-- Keyboard Shortcuts Modal -->
+<div class="modal-backdrop" id="shortcutsModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title">POS Keyboard Shortcuts</h3>
+            <button type="button" class="sidebar-toggle-btn" onclick="closeShortcutsModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <table class="data-table">
+                <tbody>
+                    <tr><td><kbd style="padding: 2px 6px; background: #eee; border-radius: 4px; font-weight: bold;">F2</kbd></td><td>Focus Product Search / Scanner</td></tr>
+                    <tr><td><kbd style="padding: 2px 6px; background: #eee; border-radius: 4px; font-weight: bold;">F8</kbd></td><td>Select Cash Payment</td></tr>
+                    <tr><td><kbd style="padding: 2px 6px; background: #eee; border-radius: 4px; font-weight: bold;">F9</kbd></td><td>Select Card Payment</td></tr>
+                    <tr><td><kbd style="padding: 2px 6px; background: #eee; border-radius: 4px; font-weight: bold;">F10</kbd></td><td>Select UPI / Wallet Payment</td></tr>
+                    <tr><td><kbd style="padding: 2px 6px; background: #eee; border-radius: 4px; font-weight: bold;">Ctrl + Enter</kbd></td><td>Complete Sale Immediately</td></tr>
+                    <tr><td><kbd style="padding: 2px 6px; background: #eee; border-radius: 4px; font-weight: bold;">Esc</kbd></td><td>Close Modals / Deselect</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-primary" onclick="closeShortcutsModal()">Got it</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-        <!-- CHECKOUT -->
-
-        <button
-            type="button"
-            class="checkout"
-            id="checkoutButton"
-        >
-            Complete Sale
-        </button>
-
-
-        <div
-            id="message"
-            class="message"
-        ></div>
-
-    </section>
-
-</main>
-
-
+{% block extra_js %}
 <script>
-
+    // State management
     const cart = [];
+    let selectedPayment = 'CASH';
+    let customerData = {
+        name: '',
+        phone: '',
+        notes: ''
+    };
 
+    // Category Filtering
+    function filterCategory(catId, btnElement) {
+        document.querySelectorAll('.category-pill').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
 
-    function addToCart(
-        id,
-        name,
-        price,
-        tax,
-        stock
-    ) {
+        const searchVal = document.getElementById('productSearch').value.toLowerCase().trim();
+        applyFilters(catId, searchVal);
+    }
 
-        const existing = cart.find(
-            item => item.id === id
-        );
+    // Product Search & Filtering
+    document.getElementById('productSearch').addEventListener('input', function() {
+        const activePill = document.querySelector('.category-pill.active');
+        const catId = activePill ? activePill.dataset.category : 'all';
+        applyFilters(catId, this.value.toLowerCase().trim());
+    });
+
+    function applyFilters(catId, query) {
+        document.querySelectorAll('.pos-product-card').forEach(card => {
+            const name = card.dataset.name || '';
+            const sku = card.dataset.sku || '';
+            const barcode = card.dataset.barcode || '';
+            const cardCat = card.dataset.category || '';
+
+            const matchesCategory = (catId === 'all' || cardCat === catId);
+            const matchesQuery = !query || name.includes(query) || sku.includes(query) || barcode.includes(query);
+
+            card.style.display = (matchesCategory && matchesQuery) ? 'flex' : 'none';
+        });
+    }
+
+    // Cart Operations
+    function addToCart(id, name, sku, price, tax, stock, imageUrl) {
+        const existing = cart.find(item => item.id === id);
 
         if (existing) {
-
-            if (existing.quantity < existing.stock) {
-
+            if (existing.quantity < stock) {
                 existing.quantity++;
-
+                showToast(`Added another ${name} to cart`, 'info');
+            } else {
+                showToast(`Only ${stock} units available in stock for ${name}`, 'warning');
+                return;
             }
-
         } else {
-
             cart.push({
                 id: id,
                 name: name,
-                price: price,
-                tax: tax,
-                stock: stock,
+                sku: sku,
+                price: parseFloat(price),
+                tax: parseFloat(tax),
+                stock: parseInt(stock),
+                imageUrl: imageUrl || '',
                 quantity: 1
             });
-
+            showToast(`${name} added to sale`, 'success');
         }
 
         renderCart();
-
     }
 
+    function changeQuantity(id, delta) {
+        const item = cart.find(i => i.id === id);
+        if (!item) return;
 
-    function changeQuantity(
-        id,
-        change
-    ) {
-
-        const item = cart.find(
-            item => item.id === id
-        );
-
-        if (!item) {
+        const newQty = item.quantity + delta;
+        if (newQty > item.stock) {
+            showToast(`Max available stock is ${item.stock}`, 'warning');
             return;
         }
 
-        const newQuantity =
-            item.quantity + change;
-
-
-        if (
-            newQuantity >= 1 &&
-            newQuantity <= item.stock
-        ) {
-
-            item.quantity =
-                newQuantity;
-
+        if (newQty <= 0) {
+            removeFromCart(id);
+            return;
         }
 
+        item.quantity = newQty;
         renderCart();
-
     }
-
 
     function removeFromCart(id) {
-
-        const index =
-            cart.findIndex(
-                item => item.id === id
-            );
-
+        const index = cart.findIndex(i => i.id === id);
         if (index !== -1) {
-
-            cart.splice(
-                index,
-                1
-            );
-
+            const removed = cart.splice(index, 1)[0];
+            showToast(`Removed ${removed.name}`, 'info');
         }
-
         renderCart();
-
     }
 
-
+    // Calculations
     function calculateTotals() {
-
         let subtotal = 0;
-        let tax = 0;
+        let totalTax = 0;
 
+        cart.forEach(item => {
+            const lineSubtotal = item.price * item.quantity;
+            const lineTax = (lineSubtotal * item.tax) / 100;
+            subtotal += lineSubtotal;
+            totalTax += lineTax;
+        });
 
-        cart.forEach(
-            item => {
+        const gross = subtotal + totalTax;
+        let discount = parseFloat(document.getElementById('discountAmountInput').value) || 0;
+        if (discount > gross) discount = gross;
+        if (discount < 0) discount = 0;
 
-                const itemSubtotal =
-                    item.price *
-                    item.quantity;
-
-                const itemTax =
-                    itemSubtotal *
-                    item.tax /
-                    100;
-
-                subtotal +=
-                    itemSubtotal;
-
-                tax +=
-                    itemTax;
-
-            }
-        );
-
-
-        let discount =
-            Number(
-                document.getElementById(
-                    'discount'
-                ).value
-            ) || 0;
-
-
-        const grossTotal =
-            subtotal + tax;
-
-
-        if (
-            discount >
-            grossTotal
-        ) {
-
-            discount =
-                grossTotal;
-
-        }
-
-
-        const total =
-            grossTotal -
-            discount;
-
+        const total = gross - discount;
 
         return {
             subtotal: subtotal,
-            tax: tax,
+            tax: totalTax,
             discount: discount,
             total: total
         };
-
     }
 
+    function updateTotals() {
+        const totals = calculateTotals();
+        document.getElementById('subtotalDisplay').textContent = '₹' + totals.subtotal.toFixed(2);
+        document.getElementById('taxDisplay').textContent = '₹' + totals.tax.toFixed(2);
+
+        const discountLine = document.getElementById('discountLine');
+        if (totals.discount > 0) {
+            discountLine.style.display = 'flex';
+            document.getElementById('discountDisplay').textContent = '-₹' + totals.discount.toFixed(2);
+        } else {
+            discountLine.style.display = 'none';
+        }
+
+        document.getElementById('grandTotalDisplay').textContent = '₹' + totals.total.toFixed(2);
+    }
 
     function renderCart() {
+        const container = document.getElementById('cartItemsContainer');
+        const countBadge = document.getElementById('cartCountBadge');
+        const emptyState = document.getElementById('cartEmptyState');
 
-        const cartElement =
-            document.getElementById(
-                'cart'
-            );
-
+        const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+        countBadge.textContent = `${totalItemsCount} item${totalItemsCount === 1 ? '' : 's'}`;
 
         if (cart.length === 0) {
-
-            cartElement.innerHTML = `
-                <div class="empty-cart">
-                    Cart is empty.
+            container.innerHTML = `
+                <div class="cart-empty-message">
+                    <i data-lucide="shopping-cart" style="width: 32px; height: 32px; color: var(--text-muted);"></i>
+                    <span style="font-size: 13px;">Cart is empty</span>
+                    <span style="font-size: 11.5px; color: var(--text-muted);">Click on items to add them to this sale</span>
                 </div>
             `;
-
-        } else {
-
-            cartElement.innerHTML =
-                cart.map(
-                    item => `
-
-                        <div class="cart-item">
-
-                            <div class="cart-row">
-
-                                <strong>
-                                    ${escapeHtml(
-                                        item.name
-                                    )}
-                                </strong>
-
-                                <button
-                                    type="button"
-                                    class="remove"
-                                    onclick="removeFromCart(
-                                        ${item.id}
-                                    )"
-                                >
-                                    Remove
-                                </button>
-
-                            </div>
-
-
-                            <div class="cart-row">
-
-                                <span>
-                                    ₹${item.price.toFixed(2)}
-                                </span>
-
-
-                                <div class="quantity-controls">
-
-                                    <button
-                                        type="button"
-                                        onclick="changeQuantity(
-                                            ${item.id},
-                                            -1
-                                        )"
-                                    >
-                                        −
-                                    </button>
-
-
-                                    <span>
-                                        ${item.quantity}
-                                    </span>
-
-
-                                    <button
-                                        type="button"
-                                        onclick="changeQuantity(
-                                            ${item.id},
-                                            1
-                                        )"
-                                    >
-                                        +
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="cart-row">
-
-                                <small>
-                                    Tax:
-                                    ${item.tax}%
-                                </small>
-
-                                <strong>
-                                    ₹${(
-                                        item.price *
-                                        item.quantity *
-                                        (
-                                            1 +
-                                            item.tax /
-                                            100
-                                        )
-                                    ).toFixed(2)}
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-                    `
-                ).join('');
-
-        }
-
-
-        const totals =
-            calculateTotals();
-
-
-        document.getElementById(
-            'subtotal'
-        ).textContent =
-            `₹${totals.subtotal.toFixed(2)}`;
-
-
-        document.getElementById(
-            'tax'
-        ).textContent =
-            `₹${totals.tax.toFixed(2)}`;
-
-
-        document.getElementById(
-            'discountAmount'
-        ).textContent =
-            `₹${totals.discount.toFixed(2)}`;
-
-
-        document.getElementById(
-            'total'
-        ).textContent =
-            `₹${totals.total.toFixed(2)}`;
-
-    }
-
-
-    function escapeHtml(value) {
-
-        const div =
-            document.createElement(
-                'div'
-            );
-
-        div.textContent =
-            value;
-
-        return div.innerHTML;
-
-    }
-
-
-    function getCookie(name) {
-
-        const cookies =
-            document.cookie.split(';');
-
-
-        for (
-            let cookie of cookies
-        ) {
-
-            cookie =
-                cookie.trim();
-
-
-            if (
-                cookie.startsWith(
-                    name + '='
-                )
-            ) {
-
-                return decodeURIComponent(
-                    cookie.substring(
-                        name.length + 1
-                    )
-                );
-
-            }
-
-        }
-
-
-        return null;
-
-    }
-
-
-    async function checkout() {
-
-        if (
-            cart.length === 0
-        ) {
-
-            showMessage(
-                'Cart is empty.',
-                false
-            );
-
+            lucide.createIcons();
+            updateTotals();
             return;
-
         }
 
+        let html = '';
+        cart.forEach(item => {
+            const lineTotal = item.price * item.quantity;
+            html += `
+                <div class="cart-item-row">
+                    <div class="cart-item-thumb">
+                        ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.name}">` : `<i data-lucide="package" style="color: #94A3B8; width: 20px; height: 20px;"></i>`}
+                    </div>
+                    <div class="cart-item-details">
+                        <div class="cart-item-name" title="${item.name}">${item.name}</div>
+                        <div class="cart-item-sku">${item.sku}</div>
+                    </div>
+                    <div class="cart-item-right">
+                        <div class="cart-item-price">₹${lineTotal.toFixed(2)}</div>
+                        <div class="cart-stepper">
+                            <button type="button" class="stepper-btn" onclick="changeQuantity(${item.id}, -1)">−</button>
+                            <span class="stepper-qty">${item.quantity}</span>
+                            <button type="button" class="stepper-btn" onclick="changeQuantity(${item.id}, 1)">+</button>
+                            <button type="button" class="cart-item-trash" title="Remove Item" onclick="removeFromCart(${item.id})">
+                                <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
 
-        const totals =
-            calculateTotals();
+        container.innerHTML = html;
+        lucide.createIcons();
+        updateTotals();
+    }
 
+    // Payment Selection
+    function selectPaymentMethod(method, btnElement) {
+        selectedPayment = method;
+        document.querySelectorAll('.pay-btn').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+        showToast(`Payment method: ${method}`, 'info');
+    }
 
-        const data = {
+    // Customer Modal
+    function toggleCustomerModal() {
+        const modal = document.getElementById('customerModal');
+        modal.classList.toggle('active');
+    }
 
-            items:
-                cart.map(
-                    item => ({
-                        product_id:
-                            item.id,
+    function saveCustomerDetails() {
+        customerData.name = document.getElementById('customerNameInput').value.trim();
+        customerData.phone = document.getElementById('customerPhoneInput').value.trim();
+        customerData.notes = document.getElementById('saleNotesInput').value.trim();
 
-                        quantity:
-                            item.quantity
-                    })
-                ),
+        document.getElementById('displayCustomerName').textContent = customerData.name || 'Walk-in Customer';
+        document.getElementById('displayCustomerPhone').textContent = customerData.phone || 'No loyalty points';
 
+        toggleCustomerModal();
+        showToast('Customer details saved', 'success');
+    }
 
-            payment_method:
-                document.getElementById(
-                    'paymentMethod'
-                ).value,
+    // Discount Toggle
+    function toggleDiscountField() {
+        const row = document.getElementById('discountInputRow');
+        const btn = document.getElementById('discountToggleBtn');
+        if (row.classList.contains('visible')) {
+            row.classList.remove('visible');
+            btn.style.display = 'flex';
+        } else {
+            row.classList.add('visible');
+            btn.style.display = 'none';
+            document.getElementById('discountAmountInput').focus();
+        }
+    }
 
+    // Shortcuts Modal
+    function openShortcutsModal() {
+        document.getElementById('shortcutsModal').classList.add('active');
+    }
+    function closeShortcutsModal() {
+        document.getElementById('shortcutsModal').classList.remove('active');
+    }
 
-            customer_name:
-                document.getElementById(
-                    'customerName'
-                ).value.trim(),
+    // Checkout API Call
+    async function processCheckout() {
+        if (cart.length === 0) {
+            showToast('Cart cannot be empty. Please select products first.', 'warning');
+            return;
+        }
 
+        const totals = calculateTotals();
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        checkoutBtn.disabled = true;
+        checkoutBtn.innerHTML = `<i data-lucide="loader" class="spin"></i><span>Processing Sale...</span>`;
+        lucide.createIcons();
 
-            customer_phone:
-                document.getElementById(
-                    'customerPhone'
-                ).value.trim(),
-
-
-            discount_amount:
-                totals.discount.toFixed(2),
-
-
-            notes: ''
-
+        const payload = {
+            items: cart.map(item => ({
+                product_id: item.id,
+                quantity: item.quantity
+            })),
+            payment_method: selectedPayment,
+            customer_name: customerData.name,
+            customer_phone: customerData.phone,
+            notes: customerData.notes,
+            discount_amount: totals.discount.toFixed(2)
         };
 
-
-        const button =
-            document.getElementById(
-                'checkoutButton'
-            );
-
-
-        button.disabled =
-            true;
-
-
-        button.textContent =
-            'Processing...';
-
-
         try {
-
-            const response =
-                await fetch(
-                    "{% url 'checkout' %}",
-                    {
-                        method: 'POST',
-
-                        headers: {
-
-                            'Content-Type':
-                                'application/json',
-
-                            'X-CSRFToken':
-                                getCookie(
-                                    'csrftoken'
-                                )
-
-                        },
-
-                        body:
-                            JSON.stringify(
-                                data
-                            )
-                    }
-                );
-
-
-            const result =
-                await response.json();
-
-
-            if (
-                result.success
-            ) {
-
-                showMessage(
-                    `Sale completed successfully. Invoice: ${result.sale.invoice_number}`,
-                    true
-                )
-                setTimeout(
-                function () {
-
-                    window.location.href =
-                        `/billing/invoice/${result.sale.invoice_number}/`;
-
+            const response = await fetch("{% url 'checkout' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
                 },
-                1000
-            )
-                ;
+                body: JSON.stringify(payload)
+            });
 
+            const data = await response.json();
 
-                cart.length =
-                    0;
+            if (response.ok && data.success) {
+                showToast(`Sale completed! Invoice ${data.sale.invoice_number}`, 'success');
 
-
-                document.getElementById(
-                    'customerName'
-                ).value = '';
-
-
-                document.getElementById(
-                    'customerPhone'
-                ).value = '';
-
-
-                document.getElementById(
-                    'discount'
-                ).value = '0';
-
-
-                renderCart();
-
-
-                setTimeout(
-                    function () {
-
-                        window.location.reload();
-
-                    },
-                    1500
-                );
-
-
+                // Redirect to printable invoice view
+                setTimeout(() => {
+                    window.location.href = `/billing/invoice/${data.sale.invoice_number}/`;
+                }, 750);
             } else {
-
-                showMessage(
-                    result.message ||
-                    'Checkout failed.',
-                    false
-                );
-
+                showToast(data.message || 'Checkout failed. Please review cart.', 'danger');
+                checkoutBtn.disabled = false;
+                checkoutBtn.innerHTML = `<i data-lucide="check-circle-2"></i><span>Complete Sale</span>`;
+                lucide.createIcons();
             }
-
         } catch (error) {
-
-            console.error(
-                error
-            );
-
-
-            showMessage(
-                'Unable to complete the sale.',
-                false
-            );
-
-        } finally {
-
-            button.disabled =
-                false;
-
-
-            button.textContent =
-                'Complete Sale';
-
+            console.error('Checkout error:', error);
+            showToast('Network error while processing sale.', 'danger');
+            checkoutBtn.disabled = false;
+            checkoutBtn.innerHTML = `<i data-lucide="check-circle-2"></i><span>Complete Sale</span>`;
+            lucide.createIcons();
         }
-
     }
 
+    // Global Keyboard Shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F2') {
+            e.preventDefault();
+            document.getElementById('productSearch').focus();
+        } else if (e.key === 'F8') {
+            e.preventDefault();
+            const btn = document.querySelector('.pay-btn.cash');
+            if (btn) selectPaymentMethod('CASH', btn);
+        } else if (e.key === 'F9') {
+            e.preventDefault();
+            const btn = document.querySelector('.pay-btn.card');
+            if (btn) selectPaymentMethod('CARD', btn);
+        } else if (e.key === 'F10') {
+            e.preventDefault();
+            const btn = document.querySelector('.pay-btn.wallet');
+            if (btn) selectPaymentMethod('UPI', btn);
+        } else if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            processCheckout();
+        } else if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-backdrop.active').forEach(m => m.classList.remove('active'));
+        }
+    });
 
-    function showMessage(
-        message,
-        success
-    ) {
-
-        const element =
-            document.getElementById(
-                'message'
-            );
-
-
-        element.textContent =
-            message;
-
-
-        element.className =
-            success
-                ? 'message success'
-                : 'message error';
-
-
-        element.style.display =
-            'block';
-
-    }
-
-
-    document
-        .querySelectorAll(
-            '.add-to-cart'
-        )
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    'click',
-                    function () {
-
-                        const id =
-                            Number(
-                                this.dataset.id
-                            );
-
-
-                        const name =
-                            this.dataset.name;
-
-
-                        const price =
-                            Number(
-                                this.dataset.price
-                            );
-
-
-                        const tax =
-                            Number(
-                                this.dataset.tax
-                            );
-
-
-                        const stock =
-                            Number(
-                                this.dataset.stock
-                            );
-
-
-                        addToCart(
-                            id,
-                            name,
-                            price,
-                            tax,
-                            stock
-                        );
-
-                    }
-                );
-
-            }
-        );
-
-
-    document
-        .getElementById(
-            'productSearch'
-        )
-        .addEventListener(
-            'input',
-            function () {
-
-                const query =
-                    this.value
-                        .toLowerCase()
-                        .trim();
-
-
-                document
-                    .querySelectorAll(
-                        '.product'
-                    )
-                    .forEach(
-                        product => {
-
-                            const name =
-                                product.dataset.name ||
-                                '';
-
-                            const sku =
-                                product.dataset.sku ||
-                                '';
-
-                            const barcode =
-                                product.dataset.barcode ||
-                                '';
-
-
-                            const matches =
-                                name.includes(
-                                    query
-                                ) ||
-                                sku.includes(
-                                    query
-                                ) ||
-                                barcode.includes(
-                                    query
-                                );
-
-
-                            product.style.display =
-                                matches
-                                    ? ''
-                                    : 'none';
-
-                        }
-                    );
-
-            }
-        );
-
-
-    document
-        .getElementById(
-            'discount'
-        )
-        .addEventListener(
-            'input',
-            renderCart
-        );
-
-
-    document
-        .getElementById(
-            'checkoutButton'
-        )
-        .addEventListener(
-            'click',
-            checkout
-        );
-
-
-    renderCart();
-
+    // Initialize display
+    updateTotals();
 </script>
-
-</body>
-
-</html>
-
+{% endblock %}

@@ -1,64 +1,92 @@
-<!DOCTYPE html>
+{% extends 'base.html' %}
 
-<html lang="en">
+{% block title %}{{ page_title }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
 
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>{{ page_title }}</title>
-
-</head>
-
-<body>
-
-<h1>{{ page_title }}</h1>
-
-<a href="{% url 'staff_list' %}">
-    ← Back to Staff
+{% block header_actions %}
+<a href="{% url 'staff_list' %}" class="btn-secondary">
+    <i data-lucide="arrow-left"></i>
+    <span>Back to Staff</span>
 </a>
+{% endblock %}
 
-<hr>
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+    <div class="card-header">
+        <h2 class="card-title">{{ page_title }}</h2>
+        <span style="font-size: 12.5px; color: var(--text-secondary);">Provide cashier details to grant access</span>
+    </div>
 
-<form method="post">
+    <form method="post" class="card-body">
+        {% csrf_token %}
 
-    {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div style="padding: 12px; background: var(--danger-light); color: var(--danger-text); border-radius: var(--radius-md); margin-bottom: 20px;">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
 
-    {{ form.non_field_errors }}
+        <div class="form-grid">
+            <div class="form-section-title">
+                <i data-lucide="user" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i>
+                Account Credentials
+            </div>
 
-    {% for field in form %}
+            <div class="form-group full-width">
+                <label class="form-label" for="{{ form.username.id_for_label }}">Username *</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="form-error">{{ form.username.errors.0 }}</div>{% endif %}
+            </div>
 
-        <div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.password.id_for_label }}">Password *</label>
+                {{ form.password }}
+                {% if form.password.errors %}<div class="form-error">{{ form.password.errors.0 }}</div>{% endif %}
+            </div>
 
-            {{ field.label_tag }}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.confirm_password.id_for_label }}">Confirm Password *</label>
+                {{ form.confirm_password }}
+                {% if form.confirm_password.errors %}<div class="form-error">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+            </div>
 
-            {{ field }}
+            <div class="form-section-title">
+                <i data-lucide="id-card" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i>
+                Personal Details
+            </div>
 
-            {% if field.errors %}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.first_name.id_for_label }}">First Name</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}<div class="form-error">{{ form.first_name.errors.0 }}</div>{% endif %}
+            </div>
 
-                <div>
-                    {{ field.errors }}
-                </div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.last_name.id_for_label }}">Last Name</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}<div class="form-error">{{ form.last_name.errors.0 }}</div>{% endif %}
+            </div>
 
-            {% endif %}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.email.id_for_label }}">Email Address *</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="form-error">{{ form.email.errors.0 }}</div>{% endif %}
+            </div>
 
+            <div class="form-group">
+                <label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+                {{ form.phone_number }}
+                {% if form.phone_number.errors %}<div class="form-error">{{ form.phone_number.errors.0 }}</div>{% endif %}
+            </div>
         </div>
 
-        <br>
-
-    {% endfor %}
-
-    <button type="submit">
-        Create Staff
-    </button>
-
-</form>
-
-</body>
-
-</html>
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <a href="{% url 'staff_list' %}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">
+                <i data-lucide="check"></i>
+                <span>Create Staff Account</span>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

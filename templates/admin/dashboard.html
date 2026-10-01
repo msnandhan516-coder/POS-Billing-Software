@@ -1,15 +1,294 @@
-<h1>Admin Dashboard</h1>
+{% extends 'base.html' %}
 
-<p>Total Products: {{ total_products }}</p>
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
-<p>Low Stock: {{ low_stock_products }}</p>
+{% block content %}
+<!-- KPI Summary Cards -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-title">Today's Sales</span>
+            <div class="kpi-icon-wrap blue">
+                <i data-lucide="indian-rupee"></i>
+            </div>
+        </div>
+        <div class="kpi-value">₹{{ today_sales|floatformat:2 }}</div>
+        <div class="kpi-trend {% if sales_growth >= 0 %}positive{% else %}negative{% endif %}">
+            <i data-lucide="{% if sales_growth >= 0 %}trending-up{% else %}trending-down{% endif %}" style="width: 14px; height: 14px;"></i>
+            <span>{% if sales_growth >= 0 %}+{% endif %}{{ sales_growth }}% from yesterday</span>
+        </div>
+    </div>
 
-<p>Total Staff: {{ total_staff }}</p>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-title">Transactions</span>
+            <div class="kpi-icon-wrap green">
+                <i data-lucide="receipt"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ today_transactions }}</div>
+        <div class="kpi-trend {% if tx_growth >= 0 %}positive{% else %}negative{% endif %}">
+            <i data-lucide="{% if tx_growth >= 0 %}trending-up{% else %}trending-down{% endif %}" style="width: 14px; height: 14px;"></i>
+            <span>{% if tx_growth >= 0 %}+{% endif %}{{ tx_growth }}% from yesterday</span>
+        </div>
+    </div>
 
-<p>Today's Transactions: {{ today_transactions }}</p>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-title">Total Products</span>
+            <div class="kpi-icon-wrap purple">
+                <i data-lucide="package"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ total_products }}</div>
+        <div class="kpi-trend neutral">
+            <span>In active inventory</span>
+        </div>
+    </div>
 
-<p>Today's Sales: ₹{{ today_sales }}</p>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-title">Low Stock Alert</span>
+            <div class="kpi-icon-wrap amber">
+                <i data-lucide="alert-triangle"></i>
+            </div>
+        </div>
+        <div class="kpi-value" style="color: {% if low_stock_products > 0 %}var(--warning){% else %}var(--text-primary){% endif %};">
+            {{ low_stock_products }}
+        </div>
+        <div class="kpi-trend {% if low_stock_products > 0 %}negative{% else %}positive{% endif %}">
+            <span>{% if low_stock_products > 0 %}Requires restocking{% else %}Optimal stock levels{% endif %}</span>
+        </div>
+    </div>
 
-<a href="{% url 'logout' %}">
-    Logout
-</a>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-title">Active Staff</span>
+            <div class="kpi-icon-wrap blue">
+                <i data-lucide="users"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ total_staff }}</div>
+        <div class="kpi-trend neutral">
+            <span>Cashiers & attendants</span>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Analytics Charts -->
+<div class="dashboard-charts-grid">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Sales Revenue Analytics</h2>
+            <span style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">Last 7 Days</span>
+        </div>
+        <div class="card-body">
+            <div style="height: 270px; width: 100%;">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Payment Methods</h2>
+            <span style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">Distribution</span>
+        </div>
+        <div class="card-body">
+            <div style="height: 270px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                <canvas id="paymentMethodChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Section: Low Stock & Recent Transactions -->
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start;">
+    <!-- Low Stock Products List -->
+    <div class="card">
+        <div class="card-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="alert-circle" style="color: var(--warning); width: 18px; height: 18px;"></i>
+                <h2 class="card-title">Low Stock Items</h2>
+            </div>
+            <a href="{% url 'product_list' %}" style="font-size: 12.5px; color: var(--accent-primary); text-decoration: none; font-weight: 600;">View All</a>
+        </div>
+        <div class="card-body" style="padding: 10px 16px;">
+            {% if low_stock_items %}
+                {% for item in low_stock_items %}
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-subtle);">
+                    <div>
+                        <div style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);">{{ item.name }}</div>
+                        <div style="font-size: 11.5px; color: var(--text-secondary); font-family: monospace;">SKU: {{ item.sku }}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="badge warning">{{ item.stock_quantity }} remaining</span>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Min: {{ item.minimum_stock }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" style="padding: 30px 16px;">
+                    <i data-lucide="check-circle" style="color: var(--success); width: 32px; height: 32px;"></i>
+                    <div style="font-size: 13.5px; font-weight: 600; color: var(--text-primary); margin-top: 6px;">All Stock Levels Healthy</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">No products are currently under minimum stock thresholds.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Transactions Table -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Recent Transactions</h2>
+            <a href="{% url 'sales_history' %}" style="font-size: 12.5px; color: var(--accent-primary); text-decoration: none; font-weight: 600;">Sales History</a>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Date & Time</th>
+                        <th>Customer</th>
+                        <th>Cashier</th>
+                        <th>Payment</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in recent_transactions %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--accent-primary); font-family: monospace;">{{ sale.invoice_number }}</strong>
+                        </td>
+                        <td style="font-size: 12.5px; color: var(--text-secondary);">
+                            {{ sale.created_at|date:"d M Y, h:i A" }}
+                        </td>
+                        <td>
+                            {{ sale.customer_name|default:"Walk-in Customer" }}
+                        </td>
+                        <td style="font-size: 12.5px;">
+                            {{ sale.staff.username }}
+                        </td>
+                        <td>
+                            <span class="badge info">{{ sale.payment_method }}</span>
+                        </td>
+                        <td>
+                            <strong>₹{{ sale.total_amount|floatformat:2 }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge success">{{ sale.payment_status }}</span>
+                        </td>
+                        <td>
+                            <a href="{% url 'invoice' sale.invoice_number %}" class="btn-secondary btn-sm" title="View & Print Invoice">
+                                <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                <span>Invoice</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                            No transactions recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Sales Revenue Bar/Line Chart
+    const dates = {{ chart_dates_json|safe }};
+    const revenues = {{ chart_revenue_json|safe }};
+
+    const ctxSales = document.getElementById('salesChart').getContext('2d');
+    new Chart(ctxSales, {
+        type: 'bar',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Revenue (₹)',
+                data: revenues,
+                backgroundColor: 'rgba(37, 99, 235, 0.85)',
+                hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
+                borderRadius: 6,
+                maxBarThickness: 38,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return ' ₹' + Number(context.parsed.y).toLocaleString('en-IN', {minimumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#F1F5F9' },
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value;
+                        },
+                        font: { family: 'Inter', size: 11 }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { family: 'Inter', size: 11 } }
+                }
+            }
+        }
+    });
+
+    // Payment Methods Doughnut Chart
+    const paymentLabels = {{ payment_labels_json|safe }};
+    const paymentValues = {{ payment_breakdown_json|safe }};
+
+    const ctxPayment = document.getElementById('paymentMethodChart').getContext('2d');
+    new Chart(ctxPayment, {
+        type: 'doughnut',
+        data: {
+            labels: paymentLabels,
+            datasets: [{
+                data: paymentValues,
+                backgroundColor: ['#16A34A', '#2563EB', '#6366F1'],
+                borderWidth: 2,
+                borderColor: '#FFFFFF',
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, padding: 14, font: { family: 'Inter', size: 12 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.label}: ₹` + Number(context.parsed).toLocaleString('en-IN', {minimumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            cutout: '70%',
+        }
+    });
+</script>
+{% endblock %}
