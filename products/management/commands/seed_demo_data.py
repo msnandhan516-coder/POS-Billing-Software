@@ -165,8 +165,15 @@ class Command(BaseCommand):
             prod.stock_quantity = stock
             prod.minimum_stock = min_stock
             prod.selling_price = Decimal(str(s_price))
+            
+            img_filename = f"{sku.lower().replace('-', '_')}.jpg"
+            img_disk_path = os.path.join('media', 'products', img_filename)
+            if os.path.exists(img_disk_path):
+                prod.image = f"products/{img_filename}"
+
             prod.save()
             created_products.append(prod)
+
 
         # 5. Historical Sales Transactions
         now = timezone.now()
