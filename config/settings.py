@@ -35,6 +35,10 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 _raw_hosts = os.environ.get('ALLOWED_HOSTS', '*')
 ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://pos-billing-software-b3w2.onrender.com',
+]
+
 
 
 # Application definition
@@ -185,11 +189,19 @@ REST_FRAMEWORK = {
 
 # ─── Production security hardening ───────────────────────────────────────────
 if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = (
+        'HTTP_X_FORWARDED_PROTO',
+        'https'
+    )
+
     SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000          # 1 year
+
+    SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
     SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
