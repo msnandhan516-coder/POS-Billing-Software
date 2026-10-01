@@ -1,0 +1,1255 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>POS Billing</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2937;
+        }
+
+        .header {
+            background: #1f2937;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+        }
+
+        .header a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .pos-container {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: auto;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .panel h2 {
+            margin-top: 0;
+        }
+
+        .search {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fill,
+                minmax(180px, 1fr)
+            );
+            gap: 15px;
+        }
+
+        .product {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            transition: 0.2s ease;
+        }
+
+        .product:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .product h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .product p {
+            margin: 7px 0;
+        }
+
+        .product button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .product button:hover {
+            background: #1d4ed8;
+        }
+
+        .product button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .cart-item {
+            border-bottom: 1px solid #eee;
+            padding: 12px 0;
+        }
+
+        .cart-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quantity-controls button {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .quantity-controls button:hover {
+            background: #f3f4f6;
+        }
+
+        .remove {
+            color: #dc2626;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        .remove:hover {
+            text-decoration: underline;
+        }
+
+        .summary {
+            border-top: 2px solid #eee;
+            margin-top: 20px;
+            padding-top: 15px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .total {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .field {
+            margin-top: 12px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .checkout {
+            width: 100%;
+            padding: 14px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 7px;
+            background: #16a34a;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .checkout:hover {
+            background: #15803d;
+        }
+
+        .checkout:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .empty-cart {
+            color: #6b7280;
+            text-align: center;
+            padding: 30px 10px;
+        }
+
+        @media (max-width: 900px) {
+
+            .pos-container {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<header class="header">
+
+    <h1>POS Billing</h1>
+
+    <a href="{% url 'admin_dashboard' %}">
+        Dashboard
+    </a>
+
+</header>
+
+
+<main class="pos-container">
+
+
+    <!-- PRODUCTS -->
+
+    <section class="panel">
+
+        <h2>Products</h2>
+
+        <input
+            type="text"
+            id="productSearch"
+            class="search"
+            placeholder="Search product, SKU or barcode..."
+            autocomplete="off"
+        >
+
+        <div
+            class="products"
+            id="productList"
+        >
+
+            {% for product in products %}
+
+            <div
+                class="product"
+                data-name="{{ product.name|lower }}"
+                data-sku="{{ product.sku|lower }}"
+                data-barcode="{{ product.barcode|lower }}"
+            >
+
+                <h3>
+                    {{ product.name }}
+                </h3>
+
+                <p>
+                    SKU: {{ product.sku }}
+                </p>
+
+                <p>
+                    Barcode: {{ product.barcode }}
+                </p>
+
+                <p>
+                    ₹{{ product.selling_price }}
+                </p>
+
+                <p>
+                    Tax:
+                    {{ product.tax_percentage }}%
+                </p>
+
+                <p>
+                    Stock:
+                    <span class="stock">
+                        {{ product.stock_quantity }}
+                    </span>
+                </p>
+
+                <button
+                    type="button"
+                    class="add-to-cart"
+                    data-id="{{ product.id }}"
+                    data-name="{{ product.name }}"
+                    data-price="{{ product.selling_price }}"
+                    data-tax="{{ product.tax_percentage }}"
+                    data-stock="{{ product.stock_quantity }}"
+                    {% if product.stock_quantity <= 0 %}
+                        disabled
+                    {% endif %}
+                >
+                    Add to Cart
+                </button>
+
+            </div>
+
+            {% empty %}
+
+            <p>
+                No active products available.
+            </p>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- CART -->
+
+    <section class="panel">
+
+        <h2>Cart</h2>
+
+        <div id="cart">
+
+            <div class="empty-cart">
+                Cart is empty.
+            </div>
+
+        </div>
+
+
+        <!-- CUSTOMER -->
+
+        <div class="field">
+
+            <label for="customerName">
+                Customer Name
+            </label>
+
+            <input
+                type="text"
+                id="customerName"
+                placeholder="Optional"
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="customerPhone">
+                Customer Phone
+            </label>
+
+            <input
+                type="text"
+                id="customerPhone"
+                placeholder="Optional"
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <!-- DISCOUNT -->
+
+        <div class="field">
+
+            <label for="discount">
+                Discount
+            </label>
+
+            <input
+                type="number"
+                id="discount"
+                value="0"
+                min="0"
+                step="0.01"
+            >
+
+        </div>
+
+
+        <!-- PAYMENT -->
+
+        <div class="field">
+
+            <label for="paymentMethod">
+                Payment Method
+            </label>
+
+            <select id="paymentMethod">
+
+                <option value="CASH">
+                    Cash
+                </option>
+
+                <option value="CARD">
+                    Card
+                </option>
+
+                <option value="UPI">
+                    UPI
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- SUMMARY -->
+
+        <div class="summary">
+
+            <div class="summary-row">
+
+                <span>
+                    Subtotal
+                </span>
+
+                <span id="subtotal">
+                    ₹0.00
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Tax
+                </span>
+
+                <span id="tax">
+                    ₹0.00
+                </span>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Discount
+                </span>
+
+                <span id="discountAmount">
+                    ₹0.00
+                </span>
+
+            </div>
+
+
+            <div class="summary-row total">
+
+                <span>
+                    Total
+                </span>
+
+                <span id="total">
+                    ₹0.00
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- CHECKOUT -->
+
+        <button
+            type="button"
+            class="checkout"
+            id="checkoutButton"
+        >
+            Complete Sale
+        </button>
+
+
+        <div
+            id="message"
+            class="message"
+        ></div>
+
+    </section>
+
+</main>
+
+
+<script>
+
+    const cart = [];
+
+
+    function addToCart(
+        id,
+        name,
+        price,
+        tax,
+        stock
+    ) {
+
+        const existing = cart.find(
+            item => item.id === id
+        );
+
+        if (existing) {
+
+            if (existing.quantity < existing.stock) {
+
+                existing.quantity++;
+
+            }
+
+        } else {
+
+            cart.push({
+                id: id,
+                name: name,
+                price: price,
+                tax: tax,
+                stock: stock,
+                quantity: 1
+            });
+
+        }
+
+        renderCart();
+
+    }
+
+
+    function changeQuantity(
+        id,
+        change
+    ) {
+
+        const item = cart.find(
+            item => item.id === id
+        );
+
+        if (!item) {
+            return;
+        }
+
+        const newQuantity =
+            item.quantity + change;
+
+
+        if (
+            newQuantity >= 1 &&
+            newQuantity <= item.stock
+        ) {
+
+            item.quantity =
+                newQuantity;
+
+        }
+
+        renderCart();
+
+    }
+
+
+    function removeFromCart(id) {
+
+        const index =
+            cart.findIndex(
+                item => item.id === id
+            );
+
+        if (index !== -1) {
+
+            cart.splice(
+                index,
+                1
+            );
+
+        }
+
+        renderCart();
+
+    }
+
+
+    function calculateTotals() {
+
+        let subtotal = 0;
+        let tax = 0;
+
+
+        cart.forEach(
+            item => {
+
+                const itemSubtotal =
+                    item.price *
+                    item.quantity;
+
+                const itemTax =
+                    itemSubtotal *
+                    item.tax /
+                    100;
+
+                subtotal +=
+                    itemSubtotal;
+
+                tax +=
+                    itemTax;
+
+            }
+        );
+
+
+        let discount =
+            Number(
+                document.getElementById(
+                    'discount'
+                ).value
+            ) || 0;
+
+
+        const grossTotal =
+            subtotal + tax;
+
+
+        if (
+            discount >
+            grossTotal
+        ) {
+
+            discount =
+                grossTotal;
+
+        }
+
+
+        const total =
+            grossTotal -
+            discount;
+
+
+        return {
+            subtotal: subtotal,
+            tax: tax,
+            discount: discount,
+            total: total
+        };
+
+    }
+
+
+    function renderCart() {
+
+        const cartElement =
+            document.getElementById(
+                'cart'
+            );
+
+
+        if (cart.length === 0) {
+
+            cartElement.innerHTML = `
+                <div class="empty-cart">
+                    Cart is empty.
+                </div>
+            `;
+
+        } else {
+
+            cartElement.innerHTML =
+                cart.map(
+                    item => `
+
+                        <div class="cart-item">
+
+                            <div class="cart-row">
+
+                                <strong>
+                                    ${escapeHtml(
+                                        item.name
+                                    )}
+                                </strong>
+
+                                <button
+                                    type="button"
+                                    class="remove"
+                                    onclick="removeFromCart(
+                                        ${item.id}
+                                    )"
+                                >
+                                    Remove
+                                </button>
+
+                            </div>
+
+
+                            <div class="cart-row">
+
+                                <span>
+                                    ₹${item.price.toFixed(2)}
+                                </span>
+
+
+                                <div class="quantity-controls">
+
+                                    <button
+                                        type="button"
+                                        onclick="changeQuantity(
+                                            ${item.id},
+                                            -1
+                                        )"
+                                    >
+                                        −
+                                    </button>
+
+
+                                    <span>
+                                        ${item.quantity}
+                                    </span>
+
+
+                                    <button
+                                        type="button"
+                                        onclick="changeQuantity(
+                                            ${item.id},
+                                            1
+                                        )"
+                                    >
+                                        +
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="cart-row">
+
+                                <small>
+                                    Tax:
+                                    ${item.tax}%
+                                </small>
+
+                                <strong>
+                                    ₹${(
+                                        item.price *
+                                        item.quantity *
+                                        (
+                                            1 +
+                                            item.tax /
+                                            100
+                                        )
+                                    ).toFixed(2)}
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    `
+                ).join('');
+
+        }
+
+
+        const totals =
+            calculateTotals();
+
+
+        document.getElementById(
+            'subtotal'
+        ).textContent =
+            `₹${totals.subtotal.toFixed(2)}`;
+
+
+        document.getElementById(
+            'tax'
+        ).textContent =
+            `₹${totals.tax.toFixed(2)}`;
+
+
+        document.getElementById(
+            'discountAmount'
+        ).textContent =
+            `₹${totals.discount.toFixed(2)}`;
+
+
+        document.getElementById(
+            'total'
+        ).textContent =
+            `₹${totals.total.toFixed(2)}`;
+
+    }
+
+
+    function escapeHtml(value) {
+
+        const div =
+            document.createElement(
+                'div'
+            );
+
+        div.textContent =
+            value;
+
+        return div.innerHTML;
+
+    }
+
+
+    function getCookie(name) {
+
+        const cookies =
+            document.cookie.split(';');
+
+
+        for (
+            let cookie of cookies
+        ) {
+
+            cookie =
+                cookie.trim();
+
+
+            if (
+                cookie.startsWith(
+                    name + '='
+                )
+            ) {
+
+                return decodeURIComponent(
+                    cookie.substring(
+                        name.length + 1
+                    )
+                );
+
+            }
+
+        }
+
+
+        return null;
+
+    }
+
+
+    async function checkout() {
+
+        if (
+            cart.length === 0
+        ) {
+
+            showMessage(
+                'Cart is empty.',
+                false
+            );
+
+            return;
+
+        }
+
+
+        const totals =
+            calculateTotals();
+
+
+        const data = {
+
+            items:
+                cart.map(
+                    item => ({
+                        product_id:
+                            item.id,
+
+                        quantity:
+                            item.quantity
+                    })
+                ),
+
+
+            payment_method:
+                document.getElementById(
+                    'paymentMethod'
+                ).value,
+
+
+            customer_name:
+                document.getElementById(
+                    'customerName'
+                ).value.trim(),
+
+
+            customer_phone:
+                document.getElementById(
+                    'customerPhone'
+                ).value.trim(),
+
+
+            discount_amount:
+                totals.discount.toFixed(2),
+
+
+            notes: ''
+
+        };
+
+
+        const button =
+            document.getElementById(
+                'checkoutButton'
+            );
+
+
+        button.disabled =
+            true;
+
+
+        button.textContent =
+            'Processing...';
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "{% url 'checkout' %}",
+                    {
+                        method: 'POST',
+
+                        headers: {
+
+                            'Content-Type':
+                                'application/json',
+
+                            'X-CSRFToken':
+                                getCookie(
+                                    'csrftoken'
+                                )
+
+                        },
+
+                        body:
+                            JSON.stringify(
+                                data
+                            )
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (
+                result.success
+            ) {
+
+                showMessage(
+                    `Sale completed successfully. Invoice: ${result.sale.invoice_number}`,
+                    true
+                )
+                setTimeout(
+                function () {
+
+                    window.location.href =
+                        `/billing/invoice/${result.sale.invoice_number}/`;
+
+                },
+                1000
+            )
+                ;
+
+
+                cart.length =
+                    0;
+
+
+                document.getElementById(
+                    'customerName'
+                ).value = '';
+
+
+                document.getElementById(
+                    'customerPhone'
+                ).value = '';
+
+
+                document.getElementById(
+                    'discount'
+                ).value = '0';
+
+
+                renderCart();
+
+
+                setTimeout(
+                    function () {
+
+                        window.location.reload();
+
+                    },
+                    1500
+                );
+
+
+            } else {
+
+                showMessage(
+                    result.message ||
+                    'Checkout failed.',
+                    false
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                error
+            );
+
+
+            showMessage(
+                'Unable to complete the sale.',
+                false
+            );
+
+        } finally {
+
+            button.disabled =
+                false;
+
+
+            button.textContent =
+                'Complete Sale';
+
+        }
+
+    }
+
+
+    function showMessage(
+        message,
+        success
+    ) {
+
+        const element =
+            document.getElementById(
+                'message'
+            );
+
+
+        element.textContent =
+            message;
+
+
+        element.className =
+            success
+                ? 'message success'
+                : 'message error';
+
+
+        element.style.display =
+            'block';
+
+    }
+
+
+    document
+        .querySelectorAll(
+            '.add-to-cart'
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    'click',
+                    function () {
+
+                        const id =
+                            Number(
+                                this.dataset.id
+                            );
+
+
+                        const name =
+                            this.dataset.name;
+
+
+                        const price =
+                            Number(
+                                this.dataset.price
+                            );
+
+
+                        const tax =
+                            Number(
+                                this.dataset.tax
+                            );
+
+
+                        const stock =
+                            Number(
+                                this.dataset.stock
+                            );
+
+
+                        addToCart(
+                            id,
+                            name,
+                            price,
+                            tax,
+                            stock
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            'productSearch'
+        )
+        .addEventListener(
+            'input',
+            function () {
+
+                const query =
+                    this.value
+                        .toLowerCase()
+                        .trim();
+
+
+                document
+                    .querySelectorAll(
+                        '.product'
+                    )
+                    .forEach(
+                        product => {
+
+                            const name =
+                                product.dataset.name ||
+                                '';
+
+                            const sku =
+                                product.dataset.sku ||
+                                '';
+
+                            const barcode =
+                                product.dataset.barcode ||
+                                '';
+
+
+                            const matches =
+                                name.includes(
+                                    query
+                                ) ||
+                                sku.includes(
+                                    query
+                                ) ||
+                                barcode.includes(
+                                    query
+                                );
+
+
+                            product.style.display =
+                                matches
+                                    ? ''
+                                    : 'none';
+
+                        }
+                    );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            'discount'
+        )
+        .addEventListener(
+            'input',
+            renderCart
+        );
+
+
+    document
+        .getElementById(
+            'checkoutButton'
+        )
+        .addEventListener(
+            'click',
+            checkout
+        );
+
+
+    renderCart();
+
+</script>
+
+</body>
+
+</html>
+

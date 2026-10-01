@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Suppliers | POS Billing</title>
+
+</head>
+
+<body>
+
+<h1>Supplier Management</h1>
+
+<a href="{% url 'admin_dashboard' %}">
+    Dashboard
+</a>
+
+|
+
+<a href="{% url 'supplier_create' %}">
+    Add Supplier
+</a>
+
+<hr>
+
+{% if messages %}
+
+    {% for message in messages %}
+
+        <p>{{ message }}</p>
+
+    {% endfor %}
+
+{% endif %}
+
+<form method="get">
+
+    <input
+        type="text"
+        name="search"
+        placeholder="Search supplier..."
+        value="{{ search }}"
+    >
+
+    <button type="submit">
+        Search
+    </button>
+
+    <a href="{% url 'supplier_list' %}">
+        Clear
+    </a>
+
+</form>
+
+<hr>
+
+<table border="1" cellpadding="10">
+
+    <thead>
+
+        <tr>
+
+            <th>Company</th>
+            <th>Contact Person</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Actions</th>
+
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+        {% for supplier in suppliers %}
+
+        <tr>
+
+            <td>
+                {{ supplier.company_name }}
+            </td>
+
+            <td>
+                {{ supplier.contact_person|default:"—" }}
+            </td>
+
+            <td>
+                {{ supplier.phone|default:"—" }}
+            </td>
+
+            <td>
+                {{ supplier.email|default:"—" }}
+            </td>
+
+            <td>
+
+                {% if supplier.is_active %}
+                    Active
+                {% else %}
+                    Inactive
+                {% endif %}
+
+            </td>
+
+            <td>
+
+                <a href="{% url 'supplier_update' supplier.id %}">
+                    Edit
+                </a>
+
+                <form
+                    method="post"
+                    action="{% url 'supplier_toggle_status' supplier.id %}"
+                    style="display:inline;"
+                >
+
+                    {% csrf_token %}
+
+                    <button type="submit">
+
+                        {% if supplier.is_active %}
+                            Deactivate
+                        {% else %}
+                            Activate
+                        {% endif %}
+
+                    </button>
+
+                </form>
+
+            </td>
+
+        </tr>
+
+        {% empty %}
+
+        <tr>
+
+            <td colspan="6">
+                No suppliers found.
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+</body>
+
+</html>

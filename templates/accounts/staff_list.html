@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Staff Management</title>
+
+</head>
+
+<body>
+
+<h1>Staff Management</h1>
+
+<a href="{% url 'admin_dashboard' %}">
+    Dashboard
+</a>
+
+|
+
+<a href="{% url 'staff_create' %}">
+    Add Staff
+</a>
+
+<hr>
+
+{% if messages %}
+
+    {% for message in messages %}
+
+        <p>
+            {{ message }}
+        </p>
+
+    {% endfor %}
+
+{% endif %}
+
+
+<table border="1" cellpadding="10">
+
+    <thead>
+
+        <tr>
+
+            <th>Username</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Action</th>
+
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+        {% for staff in staff_members %}
+
+        <tr>
+
+            <td>
+                {{ staff.username }}
+            </td>
+
+            <td>
+                {{ staff.first_name }}
+                {{ staff.last_name }}
+            </td>
+
+            <td>
+                {{ staff.email }}
+            </td>
+
+            <td>
+                {{ staff.phone_number|default:"—" }}
+            </td>
+
+            <td>
+
+                {% if staff.is_active %}
+
+                    Active
+
+                {% else %}
+
+                    Inactive
+
+                {% endif %}
+
+            </td>
+
+            <td>
+
+                <form
+                    method="post"
+                    action="{% url 'staff_toggle_status' staff.id %}"
+                >
+
+                    {% csrf_token %}
+
+                    <button type="submit">
+
+                        {% if staff.is_active %}
+                            Deactivate
+                        {% else %}
+                            Activate
+                        {% endif %}
+
+                    </button>
+
+                </form>
+
+            </td>
+
+        </tr>
+
+        {% empty %}
+
+        <tr>
+
+            <td colspan="6">
+                No staff members found.
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+</body>
+
+</html>
